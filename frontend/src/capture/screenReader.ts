@@ -33,6 +33,27 @@ export function getPermissions(): EchoOverlayPermissions {
 }
 
 export const openAccessibilitySettings = () => EchoOverlay.openAccessibilitySettings();
+export const showFloatingButton = () => EchoOverlay.showButton();
+export const hideFloatingButton = () => EchoOverlay.hideButton();
+export const isFloatingButtonShowing = () =>
+  SCREEN_CAPTURE_SUPPORTED && EchoOverlay.isButtonShowing();
+
+/**
+ * Fires when the floating button is tapped. The read has already happened by
+ * then — collect it with [takePendingScan].
+ */
+export function onScanRequested(handler: () => void): () => void {
+  if (!SCREEN_CAPTURE_SUPPORTED) return () => {};
+  const sub = EchoOverlay.addListener("onScanRequested", handler);
+  return () => sub.remove();
+}
+
+/** What the last button tap read, or null. Taking it clears it. */
+export async function takePendingScan(): Promise<ScanContent | null> {
+  if (!SCREEN_CAPTURE_SUPPORTED) return null;
+  const pending = await EchoOverlay.takePendingScan();
+  return pending ? toScanContent(pending) : null;
+}
 export const openAppInfo = () => EchoOverlay.openAppInfo();
 export const requestOverlayPermission = () => EchoOverlay.requestOverlayPermission();
 

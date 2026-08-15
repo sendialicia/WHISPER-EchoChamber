@@ -8,9 +8,12 @@ import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import {
   SCREEN_CAPTURE_SUPPORTED,
   getPermissions,
+  hideFloatingButton,
+  isFloatingButtonShowing,
   openAccessibilitySettings,
   openAppInfo,
   requestOverlayPermission,
+  showFloatingButton,
 } from "../capture/screenReader";
 import type { EchoOverlayPermissions } from "../../modules/echo-overlay/src/EchoOverlay.types";
 import type { SettingsScreenProps } from "../navigation/types";
@@ -32,7 +35,31 @@ export function PermissionsScreen({ navigation }: SettingsScreenProps<"Permissio
     canDrawOverlay: false,
   });
 
-  const refresh = useCallback(() => setPermissions(getPermissions()), []);
+  const [buttonShowing, setButtonShowing] = useState(false);
+  const [buttonError, setButtonError] = useState<string | null>(null);
+
+  const refresh = useCallback(() => {
+    setPermissions(getPermissions());
+    setButtonShowing(isFloatingButtonShowing());
+  }, []);
+
+  const toggleButton = useCallback(async () => {
+    setButtonError(null);
+
+    if (isFloatingButtonShowing()) {
+      await hideFloatingButton();
+      setButtonShowing(false);
+      return;
+    }
+
+    const shown = await showFloatingButton();
+    setButtonShowing(shown);
+    if (!shown) {
+      setButtonError(
+        "Android wouldn't put the button on screen. Check that screen reading is on above, and that display over other apps is allowed."
+      );
+    }
+  }, []);
 
   // Granting happens in the system's Settings app, so the only reliable moment
   // to re-check is when we come back to the foreground.
@@ -116,10 +143,25 @@ export function PermissionsScreen({ navigation }: SettingsScreenProps<"Permissio
           onPress={requestOverlayPermission}
         />
 
-        {ready ? (
+        {accessibilityConnected ? (
+          <Card title="Floating button">
+            <Text style={styles.body}>
+              {buttonShowing
+                ? "The button is on screen. Drag it anywhere; tap it over a post and GEMA reads that screen and opens with the other side."
+                : "Turn this on and a small GEMA button floats above other apps, ready whenever something gets a reaction out of you."}
+            </Text>
+            <PrimaryButton
+              label={buttonShowing ? "Hide the button" : "Show the button"}
+              onPress={toggleButton}
+            />
+            {buttonError ? <Text style={styles.error}>{buttonError}</Text> : null}
+          </Card>
+        ) : null}
+
+        {ready && buttonShowing ? (
           <InfoCard
             title="All set"
-            body="Tap the floating button over any post and GEMA will read it and show you the other side."
+            body="Open anything, tap the button over a post, and GEMA will read it and show you the other side."
           />
         ) : null}
 
@@ -195,4 +237,5 @@ const styles = StyleSheet.create({
   stepTitle: { ...typography.heading, color: colors.ink, flex: 1 },
   body: { ...typography.body, color: colors.inkSoft, lineHeight: 21 },
   doneNote: { ...typography.label, color: colors.positive },
+  error: { ...typography.caption, color: colors.danger, lineHeight: 18 },
 });

@@ -25,6 +25,53 @@ class EchoOverlayModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("EchoOverlay")
 
+    Events(ON_SCAN_REQUESTED)
+
+    // The listener is only attached while JS is subscribed, so a tap on the
+    // button never tries to reach a runtime that isn't there.
+    OnStartObserving {
+      GemaAccessibilityService.onButtonTap = { sendEvent(ON_SCAN_REQUESTED, emptyMap<String, Any>()) }
+    }
+
+    OnStopObserving {
+      GemaAccessibilityService.onButtonTap = null
+    }
+
+    // ------------------------------------------------------------ the button
+
+    /** False when the window system refused, e.g. no overlay grant at all. */
+    AsyncFunction("showButton") {
+      GemaAccessibilityService.instance?.showButton() ?: false
+    }
+
+    AsyncFunction("hideButton") {
+      GemaAccessibilityService.instance?.hideButton()
+    }
+
+    Function("isButtonShowing") {
+      GemaAccessibilityService.instance?.isButtonShowing == true
+    }
+
+    /**
+     * True when the button got on screen through the accessibility window
+     * type, which needs no draw-over-other-apps grant. The onboarding uses
+     * this to stop asking for a permission that turned out to be unnecessary.
+     */
+    Function("buttonUsesAccessibilityOverlay") {
+      GemaAccessibilityService.instance?.buttonUsesAccessibilityOverlay == true
+    }
+
+    /**
+     * Collects what the last button tap read, or null if there is nothing
+     * waiting. Taking it clears it — a scan is shown once, not replayed on
+     * every screen focus.
+     */
+    AsyncFunction("takePendingScan") {
+      GemaAccessibilityService.takePendingScan()?.let {
+        mapOf("text" to it.text, "imageBase64" to it.imageBase64)
+      }
+    }
+
     // ------------------------------------------------------------ permissions
 
     Function("isAccessibilityEnabled") {
@@ -124,3 +171,5 @@ class EchoOverlayModule : Module() {
     return false
   }
 }
+
+private const val ON_SCAN_REQUESTED = "onScanRequested"

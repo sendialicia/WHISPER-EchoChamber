@@ -40,7 +40,37 @@ class GemaAccessibilityService : AccessibilityService() {
 
     val isRunning: Boolean
       get() = instance != null
+
+    /**
+     * Set by the module while JS is listening. Held here rather than on the
+     * instance because the service is created and destroyed by the system,
+     * and the listener has to survive that.
+     */
+    @Volatile
+    var onButtonTap: (() -> Unit)? = null
+
+    /**
+     * What the last button tap read, waiting to be collected.
+     *
+     * Parked here rather than pushed straight to JS because the app is usually
+     * not running at the moment of the tap — it is being launched by that very
+     * tap. Whoever collects it takes it: a scan is shown once, not replayed
+     * every time the screen regains focus.
+     */
+    @Volatile
+    private var pendingScan: PendingScan? = null
+
+    fun takePendingScan(): PendingScan? {
+      val scan = pendingScan
+      pendingScan = null
+      return scan
+    }
   }
+
+  /** One reading of the screen: text when it was exposed, an image if not. */
+  data class PendingScan(val text: String?, val imageBase64: String?)
+
+  private var overlay: OverlayButton? = null
 
   private val screenshotExecutor = Executors.newSingleThreadExecutor()
 
@@ -50,15 +80,77 @@ class GemaAccessibilityService : AccessibilityService() {
   }
 
   override fun onUnbind(intent: android.content.Intent?): Boolean {
+    hideButton()
     instance = null
     return super.onUnbind(intent)
   }
 
   override fun onDestroy() {
+    hideButton()
     instance = null
     screenshotExecutor.shutdown()
     super.onDestroy()
   }
+
+  // ------------------------------------------------------------ the button
+
+  /** Returns false if the window system refused to show it. */
+  fun showButton(): Boolean {
+    val existing = overlay
+    if (existing != null && existing.isShowing) return true
+
+    val button = OverlayButton(this) { handleButtonTap() }
+    overlay = button
+    return button.show()
+  }
+
+  /**
+   * Reads the screen, *then* opens the app.
+   *
+   * The order is the whole trick. Bringing GEMA forward first would make it
+   * the foreground window, so the read would return GEMA's own interface
+   * instead of the post the user was looking at. The result is parked for JS
+   * to collect once it is running.
+   */
+  private fun handleButtonTap() {
+    val text = readVisibleText()
+    if (text != null) {
+      deliver(PendingScan(text = text, imageBase64 = null))
+      return
+    }
+
+    captureScreenshot { base64 ->
+      deliver(PendingScan(text = null, imageBase64 = base64))
+    }
+  }
+
+  private fun deliver(scan: PendingScan) {
+    pendingScan = scan
+    launchApp()
+    onButtonTap?.invoke()
+  }
+
+  private fun launchApp() {
+    val intent = packageManager.getLaunchIntentForPackage(packageName) ?: return
+    intent.addFlags(
+      android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+        android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
+    )
+    runCatching { startActivity(intent) }
+      .onFailure { e -> Log.w(TAG, "Couldn't bring GEMA forward", e) }
+  }
+
+  fun hideButton() {
+    overlay?.hide()
+    overlay = null
+  }
+
+  val isButtonShowing: Boolean
+    get() = overlay?.isShowing == true
+
+  /** Whether the button got in without the draw-over-other-apps grant. */
+  val buttonUsesAccessibilityOverlay: Boolean
+    get() = overlay?.usedAccessibilityOverlay == true
 
   // Required by the base class. Nothing is done per-event on purpose: reacting
   // to every window change would mean continuously inspecting other apps, and

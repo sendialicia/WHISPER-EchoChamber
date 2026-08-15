@@ -1,7 +1,18 @@
-import { NavigationContainer, type Theme } from "@react-navigation/native";
+import { useEffect, useRef } from "react";
+import { AppState } from "react-native";
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+  type Theme,
+} from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { TabBar } from "../ui/TabBar";
+import {
+  onScanRequested,
+  takePendingScan as takeNativeScan,
+} from "../capture/screenReader";
+import { setPendingScan } from "../capture/pendingScan";
 import { HomeScreen } from "../screens/HomeScreen";
 import { ScanScreen } from "../screens/ScanScreen";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
@@ -96,9 +107,59 @@ function SettingsNavigator() {
 
 const Tab = createBottomTabNavigator();
 
+const navigationRef = createNavigationContainerRef();
+
+/**
+ * Picks up a scan started from the floating button.
+ *
+ * The tap reads the screen and launches the app, so by the time this runs the
+ * result is already waiting natively. Both triggers matter: the event covers
+ * an app that was already running, and the foreground check covers a cold
+ * start, where JS did not exist yet when the tap happened.
+ */
+function useFloatingButtonScans() {
+  const collecting = useRef(false);
+
+  useEffect(() => {
+    const collect = async () => {
+      if (collecting.current) return;
+      collecting.current = true;
+      try {
+        const content = await takeNativeScan();
+        if (!content) return;
+        setPendingScan(content);
+        if (navigationRef.isReady()) {
+          // The container isn't generically typed, so the nested target is
+          // asserted rather than inferred.
+          (navigationRef.navigate as (name: string, params?: object) => void)(
+            "Home",
+            { screen: "Scan" }
+          );
+        }
+      } finally {
+        collecting.current = false;
+      }
+    };
+
+    const unsubscribe = onScanRequested(() => void collect());
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") void collect();
+    });
+
+    void collect();
+
+    return () => {
+      unsubscribe();
+      appState.remove();
+    };
+  }, []);
+}
+
 export function RootNavigator() {
+  useFloatingButtonScans();
+
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
       <Tab.Navigator
         tabBar={(props) => <TabBar {...props} />}
         // The ripple washes over the swap; a crossfade underneath keeps the

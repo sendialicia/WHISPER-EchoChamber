@@ -10,6 +10,12 @@ export default {
   openAccessibilitySettings: async () => {},
   openAppInfo: async () => {},
   requestOverlayPermission: async () => {},
+  showButton: async () => false,
+  hideButton: async () => {},
+  isButtonShowing: () => false,
+  buttonUsesAccessibilityOverlay: () => false,
+  takePendingScan: async () => null,
   readScreenText: async () => null,
   captureScreen: async () => null,
+  addListener: () => ({ remove: () => {} }),
 };

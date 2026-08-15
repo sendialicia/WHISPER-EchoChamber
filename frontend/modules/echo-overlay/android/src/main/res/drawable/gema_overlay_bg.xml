@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The button's disc. Deep indigo with a pale rim so it stays visible on
+     both dark feeds and light ones. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+  <solid android:color="#1026A2" />
+  <stroke
+      android:width="2dp"
+      android:color="#66FFFFFF" />
+</shape>

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Screen, ScreenHeader } from "../ui/Screen";
@@ -12,6 +12,10 @@ import { analyze, logScan, triage } from "../api/scan";
 import { ApiError } from "../api/client";
 import { isAuthConfigured } from "../auth/identity";
 import { prepareImageForScan } from "../scan/prepareImage";
+import {
+  subscribeToPendingScan,
+  takePendingScan,
+} from "../capture/pendingScan";
 import { recordScan } from "../storage/local";
 import type { AnalyzeResult, ScanContent } from "../api/types";
 import type { HomeScreenProps } from "../navigation/types";
@@ -136,6 +140,20 @@ export function ScanScreen({ navigation }: HomeScreenProps<"Scan">) {
         message: err instanceof Error ? err.message : "Couldn't read that image.",
       });
     }
+  }, [run]);
+
+  // A scan started from the floating button arrives already read, so it runs
+  // straight away rather than waiting for the user to press anything.
+  useEffect(() => {
+    const consume = () => {
+      const content = takePendingScan();
+      if (content) {
+        void run(content, content.text ?? "Screenshot");
+      }
+    };
+
+    consume();
+    return subscribeToPendingScan(consume);
   }, [run]);
 
   const reset = useCallback(() => {
