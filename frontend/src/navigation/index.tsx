@@ -51,7 +51,7 @@ const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 function HomeNavigator() {
   return (
     <HomeStack.Navigator screenOptions={stackOptions}>
-      <HomeStack.Screen name="Home" component={HomeScreen} />
+      <HomeStack.Screen name="HomeMain" component={HomeScreen} />
       <HomeStack.Screen name="Scan" component={ScanScreen} />
     </HomeStack.Navigator>
   );
@@ -61,7 +61,7 @@ const JournalStack = createNativeStackNavigator<JournalStackParamList>();
 function JournalNavigator() {
   return (
     <JournalStack.Navigator screenOptions={stackOptions}>
-      <JournalStack.Screen name="Journal" component={JournalScreen} />
+      <JournalStack.Screen name="JournalMain" component={JournalScreen} />
       <JournalStack.Screen name="Bookmarked" component={BookmarkedScreen} />
     </JournalStack.Navigator>
   );

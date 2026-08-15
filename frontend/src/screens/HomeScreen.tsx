@@ -14,7 +14,7 @@ import type { HomeScreenProps } from "../navigation/types";
 import { colors, spacing, typography } from "../theme";
 
 /** Landing tab — where the user's own numbers live. */
-export function HomeScreen({ navigation }: HomeScreenProps<"Home">) {
+export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
   const [meter, setMeter] = useState<EchoChamberMeterResult | null>(null);
   const [history, setHistory] = useState<ScanRecord[]>([]);
   const [loading, setLoading] = useState(false);

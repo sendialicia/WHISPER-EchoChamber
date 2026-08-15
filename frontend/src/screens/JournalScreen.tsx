@@ -20,7 +20,7 @@ import type { JournalScreenProps } from "../navigation/types";
 import { colors, gradients, radius, spacing, typography } from "../theme";
 
 /** Feature 3, second half — what keeps setting you off, and what to read next. */
-export function JournalScreen({ navigation }: JournalScreenProps<"Journal">) {
+export function JournalScreen({ navigation }: JournalScreenProps<"JournalMain">) {
   const [entries, setEntries] = useState<ReflectionJournalEntry[]>([]);
   const [nudges, setNudges] = useState<SourceDiversityNudge[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);

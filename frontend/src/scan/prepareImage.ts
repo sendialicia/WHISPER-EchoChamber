@@ -29,5 +29,15 @@ export async function prepareImageForScan(uri: string): Promise<ScanContent> {
     throw new Error("Couldn't read the image data from that file.");
   }
 
+  if (__DEV__) {
+    // A believable screenshot lands around 150–400KB here. A few KB means the
+    // capture came out blank, which otherwise only shows up as the model
+    // reporting it found nothing interesting.
+    const kb = Math.round((base64.length * 3) / 4 / 1024);
+    console.log(
+      `[scan] image ${rendered.width}×${rendered.height} → ~${kb}KB JPEG`
+    );
+  }
+
   return { imageBase64: base64, imageMimeType: "image/jpeg" };
 }

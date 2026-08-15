@@ -27,7 +27,10 @@ type Phase =
   | { kind: "idle" }
   | { kind: "preparing" }
   | { kind: "triaging" }
-  | { kind: "settled" }
+  // Carries the payload so "Analyze anyway" can re-use it, and the score so
+  // a confident "this is fine" is distinguishable from the model having read
+  // nothing at all — which otherwise look identical on screen.
+  | { kind: "settled"; confidence: number; content: ScanContent; excerpt: string }
   | { kind: "analyzing" }
   | { kind: "result"; result: AnalyzeResult }
   | { kind: "error"; message: string };
@@ -48,27 +51,53 @@ export function ScanScreen({ navigation }: HomeScreenProps<"Scan">) {
   const [draft, setDraft] = useState("");
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
 
-  const run = useCallback(async (content: ScanContent, excerpt: string) => {
-    try {
-      setPhase({ kind: "triaging" });
-      const verdict = await triage(content);
-
-      if (!verdict.is_controversial) {
-        setPhase({ kind: "settled" });
-        return;
-      }
-
-      setPhase({ kind: "analyzing" });
-      const result = await analyze(content);
-      await recordScan({ excerpt, mode: result.mode, tactic: result.tactic });
-      setPhase({ kind: "result", result });
-    } catch (err) {
-      setPhase({
-        kind: "error",
-        message: err instanceof ApiError ? err.message : "Something went wrong.",
-      });
-    }
+  const runAnalysis = useCallback(async (content: ScanContent, excerpt: string) => {
+    setPhase({ kind: "analyzing" });
+    const result = await analyze(content);
+    await recordScan({ excerpt, mode: result.mode, tactic: result.tactic });
+    setPhase({ kind: "result", result });
   }, []);
+
+  const run = useCallback(
+    async (content: ScanContent, excerpt: string) => {
+      try {
+        setPhase({ kind: "triaging" });
+        const verdict = await triage(content);
+
+        if (!verdict.is_controversial) {
+          setPhase({
+            kind: "settled",
+            confidence: verdict.confidence,
+            content,
+            excerpt,
+          });
+          return;
+        }
+
+        await runAnalysis(content, excerpt);
+      } catch (err) {
+        setPhase({
+          kind: "error",
+          message: err instanceof ApiError ? err.message : "Something went wrong.",
+        });
+      }
+    },
+    [runAnalysis]
+  );
+
+  const analyzeAnyway = useCallback(
+    async (content: ScanContent, excerpt: string) => {
+      try {
+        await runAnalysis(content, excerpt);
+      } catch (err) {
+        setPhase({
+          kind: "error",
+          message: err instanceof ApiError ? err.message : "Something went wrong.",
+        });
+      }
+    },
+    [runAnalysis]
+  );
 
   const scanText = useCallback(() => {
     const text = draft.trim();
@@ -147,6 +176,17 @@ export function ScanScreen({ navigation }: HomeScreenProps<"Scan">) {
         {phase.kind === "settled" ? (
           <View style={styles.centered}>
             <Pill label="No Significant Framing Detected" icon="✓" tone="positive" />
+            <Text style={styles.settledNote}>
+              The model read this and judged it not worth a two-sided breakdown
+              {" "}(confidence {Math.round(phase.confidence * 100)}%).
+              {"\n\n"}
+              Expected something else? Analyse it anyway to see what it actually
+              read — that also tells you whether a screenshot came through.
+            </Text>
+            <PrimaryButton
+              label="Analyze anyway"
+              onPress={() => analyzeAnyway(phase.content, phase.excerpt)}
+            />
             <GhostButton label="Scan something else" onPress={reset} />
           </View>
         ) : null}
@@ -217,7 +257,13 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: spacing.xxl, gap: spacing.lg },
   subtitle: { ...typography.body, color: colors.inkSoft },
   form: { gap: spacing.md },
-  centered: { gap: spacing.xl, paddingVertical: spacing.xl },
+  centered: { gap: spacing.md, paddingVertical: spacing.xl },
+  settledNote: {
+    ...typography.caption,
+    color: colors.inkSoft,
+    textAlign: "center",
+    lineHeight: 18,
+  },
   result: { gap: spacing.md },
   resultHeading: { ...typography.title, color: colors.ink, textAlign: "center" },
   oppositeLabel: { ...typography.caption, color: colors.inkSoft },

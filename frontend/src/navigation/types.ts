@@ -8,13 +8,16 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
  * params make that dependency impossible to get wrong.
  */
 
+// Screen names are distinct from their tab's name on purpose: a stack screen
+// called "Home" inside a tab called "Home" makes navigate("Home") ambiguous,
+// and React Navigation warns about it at runtime.
 export type HomeStackParamList = {
-  Home: undefined;
+  HomeMain: undefined;
   Scan: undefined;
 };
 
 export type JournalStackParamList = {
-  Journal: undefined;
+  JournalMain: undefined;
   Bookmarked: undefined;
 };
 
