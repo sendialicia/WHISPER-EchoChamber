@@ -10,7 +10,9 @@ import { logger } from "@core/utils/logger";
  * recommends for new projects.
  *
  * How it works: Supabase publishes its current public signing key(s) at
- * https://<project-ref>.supabase.co/auth/v1/jwks. This verifies tokens
+ * https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json — note the
+ * standard `.well-known` path; a bare /auth/v1/jwks is a different route that
+ * demands an apikey header and 401s without one. This verifies tokens
  * against that public key locally — no secret ever needs to live in this
  * backend's env vars, and key rotation on Supabase's side "just works"
  * without redeploying anything here.
@@ -44,7 +46,9 @@ function getJwks() {
     if (!env.SUPABASE_URL) {
       throw new Error("SUPABASE_URL is not set.");
     }
-    jwks = createRemoteJWKSet(new URL(`${env.SUPABASE_URL}/auth/v1/jwks`));
+    jwks = createRemoteJWKSet(
+      new URL(`${env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`)
+    );
   }
   return jwks;
 }

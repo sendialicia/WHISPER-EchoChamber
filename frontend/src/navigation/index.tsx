@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { NavigationContainer, type Theme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeScreen } from "../screens/HomeScreen";
 import { ScanScreen } from "../screens/ScanScreen";
 import { AnalysisScreen } from "../screens/AnalysisScreen";
@@ -94,6 +95,9 @@ function SettingsNavigator() {
 
 const Tab = createBottomTabNavigator();
 
+/** Bar height before the system navigation inset is added on top. */
+const TAB_BAR_HEIGHT = 68;
+
 const TAB_ICONS: Record<string, string> = {
   Home: "⌂",
   Analysis: "◫",
@@ -115,13 +119,21 @@ function TabItem({ route, focused }: { route: string; focused: boolean }) {
 }
 
 export function RootNavigator() {
+  // SDK 57 draws Android edge-to-edge, so the system navigation bar sits on
+  // top of the tab bar unless we reserve room for it ourselves. A fixed
+  // height alone would leave the bottom row of tabs underneath it.
+  const insets = useSafeAreaInsets();
+
   return (
     <NavigationContainer theme={navigationTheme}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarShowLabel: false,
-          tabBarStyle: styles.tabBar,
+          tabBarStyle: [
+            styles.tabBar,
+            { height: TAB_BAR_HEIGHT + insets.bottom, paddingBottom: insets.bottom },
+          ],
           tabBarItemStyle: styles.tabBarItem,
           tabBarIcon: ({ focused }) => (
             <TabItem route={route.name} focused={focused} />
@@ -142,7 +154,6 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: colors.card,
     borderTopColor: colors.cardBorder,
-    height: 68,
     paddingTop: spacing.sm,
   },
   tabBarItem: { paddingVertical: 0 },
