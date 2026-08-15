@@ -80,9 +80,15 @@ they're unavailable instead of failing with a raw 401.
 
 Not built yet. The plan and the reasoning behind it are in
 [`../docs/capture-strategy.md`](../docs/capture-strategy.md) — read that
-before starting the native work. In short: **accessibility tree first**,
-screenshot only as a fallback, because MediaProjection demands a fresh
-system consent dialog for every single capture on Android 14+.
+before starting the native work. In short: **one AccessibilityService does
+both jobs.** `getRootInActiveWindow()` reads the text, and
+`takeScreenshot()` (API 30+) captures the screen when the text isn't
+exposed — silently, with no consent dialog. MediaProjection is not used.
+
+> **Expo Go can't run any of this.** It's a pre-built app with a fixed set
+> of modules, and an accessibility service needs its own `<service>` in the
+> manifest. The TypeScript layer runs fine in Expo Go today; the native work
+> needs `npx expo prebuild && npx expo run:android`, or an EAS build.
 
 Both paths already hit the same backend endpoints, which take `text` OR
 `imageBase64`. The "Pick a screenshot" button on the Scan screen exercises
@@ -109,5 +115,5 @@ from `modules/` once `npx expo prebuild` has generated the native projects.
 
 Still to build, in order: permission onboarding (including the Android 13+
 restricted-settings flow, which every sideloaded install will hit), the
-accessibility service, the overlay button, then the MediaProjection
-fallback.
+accessibility service (text + screenshot), the overlay button, then the
+tone-check overlay that rewrites a draft in place with `ACTION_SET_TEXT`.

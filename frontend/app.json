@@ -21,10 +21,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.SYSTEM_ALERT_WINDOW"
       ]
     },
     "web": {
