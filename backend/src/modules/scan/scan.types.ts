@@ -1,7 +1,13 @@
 import type { ContentMode, FramingTactic } from "@core/config/constants";
+import type { SupportedImageMimeType } from "@core/llm/llmClient";
 
 export interface TriageRequest {
-  text: string;
+  /** Plain text content (optional when an image is provided). */
+  text?: string;
+  /** Raw base64 of a screenshot (no `data:` URI prefix). */
+  imageBase64?: string;
+  /** MIME type of the image. Defaults to "image/png". */
+  imageMimeType?: SupportedImageMimeType;
 }
 
 export interface TriageResult {
@@ -10,7 +16,12 @@ export interface TriageResult {
 }
 
 export interface AnalyzeRequest {
-  text: string;
+  /** Plain text content (optional when an image is provided). */
+  text?: string;
+  /** Raw base64 of a screenshot (no `data:` URI prefix). */
+  imageBase64?: string;
+  /** MIME type of the image. Defaults to "image/png". */
+  imageMimeType?: SupportedImageMimeType;
   sourceUrl?: string;
 }
 

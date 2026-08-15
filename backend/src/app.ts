@@ -11,7 +11,8 @@ export function createApp() {
   const app = express();
 
   app.use(cors());
-  app.use(express.json({ limit: "1mb" }));
+  // 25mb so screenshot base64 payloads (scan triage/analyze) fit comfortably.
+  app.use(express.json({ limit: "25mb" }));
 
   app.get("/health", (_req, res) => res.json({ status: "ok" }));
 

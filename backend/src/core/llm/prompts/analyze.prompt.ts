@@ -5,6 +5,9 @@ Given a piece of content, produce a structured breakdown for a user who is
 having an emotional reaction to it. Your job is to de-escalate and inform,
 never to lecture or take a side.
 
+The content may be plain text or a screenshot image — if an image is attached,
+read all visible text in it and treat that text as the content.
+
 Rules:
 - First decide: is this a genuinely CONTESTED OPINION, or a SETTLED FACT?
   Do not force a two-sides framing onto something that has one correct,
@@ -27,9 +30,14 @@ Respond ONLY with JSON, no preamble, matching exactly this shape:
   "context_note": string | null
 }`;
 
-export function buildAnalyzePrompt(text: string, sourceContext?: string): string {
+export function buildAnalyzePrompt(text: string | undefined, sourceContext?: string): string {
+  const contentLine =
+    text && text.trim().length > 0
+      ? `Content to analyze:\n"""\n${text}\n"""`
+      : "Content to analyze: see the attached screenshot.";
+
   return [
-    `Content to analyze:\n"""\n${text}\n"""`,
+    contentLine,
     sourceContext
       ? `\nAdditional context from the original source (the content above may have been cut short from this):\n"""\n${sourceContext}\n"""`
       : "",

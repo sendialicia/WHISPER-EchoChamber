@@ -14,6 +14,9 @@ export async function runTriage(req: TriageRequest): Promise<TriageResult> {
     speed: "fast",
     expectJson: true,
     maxTokens: 128,
+    ...(req.imageBase64
+      ? { image: { base64: req.imageBase64, mimeType: req.imageMimeType } }
+      : {}),
   });
 
   const json = result.json as Partial<TriageResult> | undefined;

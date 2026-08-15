@@ -8,6 +8,7 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_FAST_MODEL: z.string().default("gemini-2.5-flash-lite"),
   GEMINI_DEEP_MODEL: z.string().default("gemini-2.5-flash"),
+  LLM_PROVIDER: z.string().default("gemini"),
 
   DATABASE_URL: z.string().optional(),
   JWT_SECRET: z.string().default("change_me"),

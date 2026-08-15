@@ -6,6 +6,12 @@ interface ProviderResult {
   model: string;
 }
 
+// Gemini's REST body is camelCase (inlineData/mimeType), unlike the
+// snake_case used in some of Google's other client libraries.
+type GeminiPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
+
 /**
  * Thin wrapper around Gemini's generateContent endpoint.
  * "fast" -> Flash-Lite (triage, tone check — high volume, low latency)
@@ -23,11 +29,22 @@ export async function generateWithGemini(
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
 
+  const parts: GeminiPart[] = [];
+  if (options.image) {
+    parts.push({
+      inlineData: {
+        mimeType: options.image.mimeType ?? "image/png",
+        data: options.image.base64,
+      },
+    });
+  }
+  parts.push({ text: options.prompt });
+
   const contents = [
     ...(options.system
       ? [{ role: "user", parts: [{ text: `[SYSTEM INSTRUCTIONS]\n${options.system}` }] }]
       : []),
-    { role: "user", parts: [{ text: options.prompt }] },
+    { role: "user", parts },
   ];
 
   const body = {

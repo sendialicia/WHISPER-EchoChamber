@@ -1,13 +1,9 @@
 import type { Request, Response } from "express";
-import { z } from "zod";
 import { runTriage } from "./triage.service";
-
-const triageSchema = z.object({
-  text: z.string().min(1).max(10_000),
-});
+import { triageRequestSchema } from "./scan.schema";
 
 export async function triageController(req: Request, res: Response) {
-  const parsed = triageSchema.safeParse(req.body);
+  const parsed = triageRequestSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
   }

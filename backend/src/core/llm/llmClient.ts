@@ -17,6 +17,16 @@ export type LlmSpeed = "fast" | "deep";
 // "fast"  -> cheap/low-latency model (triage, tone check)
 // "deep"  -> stronger reasoning model (full analysis, steelmanning)
 
+/**
+ * Image formats the vision path accepts. This lives on the contract rather
+ * than in the scan module because it describes what the provider can read,
+ * not what one caller happens to send — any feature that starts attaching
+ * images validates against this same list.
+ */
+export const SUPPORTED_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
+
+export type SupportedImageMimeType = (typeof SUPPORTED_IMAGE_MIME_TYPES)[number];
+
 export interface LlmGenerateOptions {
   /** The user-facing task prompt (already includes the content to analyze). */
   prompt: string;
@@ -28,6 +38,12 @@ export interface LlmGenerateOptions {
   expectJson?: boolean;
   /** Max tokens for the response. */
   maxTokens?: number;
+  /**
+   * Optional inline image to send as a vision input (e.g. a screenshot of a
+   * social media post). `base64` is the raw base64 payload WITHOUT the
+   * `data:` URI prefix. `mimeType` defaults to "image/png" when omitted.
+   */
+  image?: { base64: string; mimeType?: SupportedImageMimeType };
 }
 
 export interface LlmGenerateResult {
