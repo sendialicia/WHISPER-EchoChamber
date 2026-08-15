@@ -1,10 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radius, spacing, typography } from "../theme";
+import { colors, elevation, radius, spacing, typography } from "../theme";
 
-/**
- * The glass status pill from the triage states — "No Significant Framing
- * Detected", "Likely Framing Detected".
- */
+/** Status pill — "No Significant Framing Detected", "Likely Framing Detected". */
 export function Pill({
   label,
   icon,
@@ -22,25 +19,41 @@ export function Pill({
   );
 }
 
+/** Small inline tag — a streak count, a tactic name, a topic. */
+export function Tag({ label }: { label: string }) {
+  return (
+    <View style={styles.tag}>
+      <Text style={styles.tagLabel}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   pill: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "center",
     gap: spacing.sm,
-    backgroundColor: colors.glass,
-    borderColor: colors.glassBorder,
+    backgroundColor: colors.card,
+    borderColor: colors.cardBorder,
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
+    ...elevation,
   },
   icon: { fontSize: 15 },
-  label: {
-    ...typography.label,
-    color: colors.ink,
-  },
+  label: { ...typography.label, color: colors.ink },
   neutral: { color: colors.inkSoft },
   positive: { color: colors.positive },
   caution: { color: colors.caution },
+
+  tag: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.accentSoft,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  tagLabel: { ...typography.caption, color: colors.accent },
 });

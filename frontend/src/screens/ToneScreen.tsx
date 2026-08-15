@@ -1,17 +1,26 @@
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Screen } from "../ui/Screen";
+import { Screen, ScreenHeader } from "../ui/Screen";
 import { Card, CardSection } from "../ui/Card";
-import { PrimaryButton, GhostButton } from "../ui/Button";
+import { GhostButton, PrimaryButton } from "../ui/Button";
 import { Pill } from "../ui/Pill";
 import { TextField } from "../ui/TextField";
 import { checkTone } from "../api/tone";
 import { ApiError } from "../api/client";
 import type { ToneCheckResult } from "../api/types";
+import type { SettingsScreenProps } from "../navigation/types";
 import { colors, spacing, typography } from "../theme";
 
-/** Feature 2 — run a draft reply past the model before it gets sent. */
-export function ToneScreen() {
+/**
+ * Feature 2, as a testing surface.
+ *
+ * The shipped version is an overlay over the host app's compose box — it
+ * reads the draft through the accessibility service and writes the rewrite
+ * back with ACTION_SET_TEXT, which is what the "Fix It" button in the design
+ * does. That needs native code. This screen exercises the same endpoint so
+ * the prompt and the response shape can be checked in the meantime.
+ */
+export function ToneScreen({ navigation }: SettingsScreenProps<"ToneTester">) {
   const [draft, setDraft] = useState("");
   const [result, setResult] = useState<ToneCheckResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,7 +40,7 @@ export function ToneScreen() {
     }
   }, [draft]);
 
-  const useRewrite = useCallback(() => {
+  const applyRewrite = useCallback(() => {
     if (result?.suggested_rewrite) {
       setDraft(result.suggested_rewrite);
       setResult(null);
@@ -40,32 +49,26 @@ export function ToneScreen() {
 
   return (
     <Screen>
+      <ScreenHeader title="Tone tester" onBack={() => navigation.goBack()} />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Tone</Text>
-          <Text style={styles.subtitle}>
-            Check a reply before you send it. Nothing leaves your draft box.
-          </Text>
-        </View>
-
-        <View style={styles.form}>
-          <TextField
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Write the reply you're about to send…"
-            minHeight={160}
-          />
-          <PrimaryButton
-            label="Check tone"
-            onPress={check}
-            loading={loading}
-            disabled={!draft.trim()}
-          />
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-        </View>
+        <TextField
+          value={draft}
+          onChangeText={setDraft}
+          placeholder="Write the reply you're about to send…"
+          minHeight={160}
+        />
+        <PrimaryButton
+          label="Check tone"
+          onPress={check}
+          loading={loading}
+          disabled={!draft.trim()}
+        />
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {result && !result.flagged ? (
           <Pill label="Reads clean" icon="✓" tone="positive" />
@@ -73,10 +76,10 @@ export function ToneScreen() {
 
         {result?.flagged ? (
           <View style={styles.result}>
-            <Card>
+            <Card title="Argument Suggestion">
               {result.tactic ? (
                 <CardSection
-                  label={result.tactic}
+                  label={result.tactic.replace(/_/g, " ")}
                   body="This is the pattern that stood out in your draft."
                   icon="⚠️"
                 />
@@ -90,8 +93,9 @@ export function ToneScreen() {
               ) : null}
             </Card>
             {result.suggested_rewrite ? (
-              <GhostButton label="Use this rewrite" onPress={useRewrite} />
+              <PrimaryButton label="Fix It" onPress={applyRewrite} />
             ) : null}
+            <GhostButton label="Ignore" onPress={() => setResult(null)} />
           </View>
         ) : null}
       </ScrollView>
@@ -100,11 +104,7 @@ export function ToneScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.xl },
-  header: { gap: spacing.xs },
-  title: { ...typography.display, color: colors.ink },
-  subtitle: { ...typography.body, color: colors.inkSoft },
-  form: { gap: spacing.md },
-  result: { gap: spacing.md },
+  scroll: { paddingBottom: spacing.xxl, gap: spacing.md },
+  result: { gap: spacing.sm },
   error: { ...typography.body, color: colors.danger },
 });

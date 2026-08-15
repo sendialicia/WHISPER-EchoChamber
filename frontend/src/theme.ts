@@ -1,54 +1,72 @@
 /**
  * Design tokens for EchoBreaker.
  *
- * The palette is dark-first — every mockup sits on the deep navy ground with
- * a magenta glow, so there is no light theme and screens should not try to
- * build one.
+ * Light-first: the mockups are white with pastel gradient washes, and rich
+ * blue-to-purple cards carrying the important numbers. There is no dark
+ * variant — screens should not try to build one.
  *
- * NOTE: these values are read off the design screenshots by eye. Once the
- * PNG/Figma assets land, correct them HERE and the whole app follows —
+ * NOTE: these values are read off the design screenshots by eye. When the
+ * Figma or final PNGs land, correct them HERE and the whole app follows —
  * nothing outside this file should hard-code a colour.
  */
 
 export const colors = {
-  /** Deep navy ground, darkest point of the background gradient. */
-  ground: "#0A0E27",
-  /** Mid stop of the background gradient, where the purple starts. */
-  groundMid: "#1A1040",
-  /** Lightest stop, the magenta bloom behind the content. */
-  groundGlow: "#3D1B5C",
+  /** Page ground. Slightly cool so the pastel washes sit on something. */
+  ground: "#FFFFFF",
+  groundSoft: "#F6F7FC",
 
-  /** Primary action — the "Done" button and progress bar fills. */
-  accent: "#F5308F",
-  accentSoft: "#C2298A",
+  /** Primary action — "Next", "Play", "Submit", the active tab pill. */
+  primary: "#1F31D1",
+  primaryPressed: "#1829A8",
+  /** The deep navy anchoring the feature cards. */
+  primaryDeep: "#16207A",
 
-  /** Cards sit as opaque white panels on the gradient. */
+  /** Accent — bookmarks, the meter arc, progress dots, destructive-ish flags. */
+  accent: "#FF2D8E",
+  accentSoft: "#FFD3E8",
+
+  /** White panels on the ground. */
   card: "#FFFFFF",
-  cardInk: "#14171D",
-  cardInkSoft: "#5C6472",
+  cardBorder: "#EDEFF7",
 
-  /** Text on the gradient itself. */
-  ink: "#FFFFFF",
-  inkSoft: "rgba(255, 255, 255, 0.72)",
-  inkFaint: "rgba(255, 255, 255, 0.45)",
+  /** Text on light surfaces. */
+  ink: "#14161F",
+  inkSoft: "#6B7280",
+  inkFaint: "#9CA3AF",
 
-  /** Translucent surfaces — the status pills and the floating button. */
-  glass: "rgba(12, 16, 46, 0.72)",
-  glassBorder: "rgba(255, 255, 255, 0.14)",
-  glassRaised: "rgba(255, 255, 255, 0.08)",
+  /** Text on the blue/purple cards. */
+  onDark: "#FFFFFF",
+  onDarkSoft: "rgba(255, 255, 255, 0.78)",
 
-  /** Semantic states, kept separate from the magenta accent. */
-  positive: "#3DD9A4",
-  caution: "#FFB020",
-  danger: "#FF5C5C",
+  /** Inputs and inert tracks. */
+  field: "#FFFFFF",
+  fieldBorder: "#E3E6F2",
+  track: "#EDEFF7",
+
+  /** Semantic states, deliberately separate from the pink accent. */
+  positive: "#12B76A",
+  caution: "#F79009",
+  danger: "#E4405F",
 } as const;
 
-/** Stops for the full-screen background gradient. */
-export const backgroundGradient = [
-  colors.ground,
-  colors.groundMid,
-  colors.groundGlow,
-] as const;
+/**
+ * Gradients, as tuples LinearGradient can take directly.
+ * Named for the role they play, not the hues they contain.
+ */
+export const gradients = {
+  /** Ambient wash behind a whole screen. */
+  page: ["#FFFFFF", "#F7F5FE", "#EFF3FE"],
+  /** The hero card — Echo Chamber Meter, "Choose A Practice". */
+  feature: ["#1E2A78", "#37299A", "#5B2E9E"],
+  /** Informational callouts — "Tip!", "What's this mean?", "Results!". */
+  info: ["#2B49E0", "#4269F2"],
+  /** The opposing view, and quoted content under analysis. */
+  opposite: ["#FBDCEF", "#E7C6F2"],
+  /** The meter arc: cool through to accent as the skew climbs. */
+  meter: ["#3DD9D0", "#4A6CF7", "#FF2D8E"],
+  /** Emotional-history chips in the journal. */
+  chip: ["#5B6BF0", "#B24BD6"],
+} as const;
 
 export const spacing = {
   xs: 4,
@@ -60,9 +78,10 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 8,
+  sm: 10,
   md: 16,
   lg: 24,
+  xl: 32,
   pill: 999,
 } as const;
 
@@ -73,4 +92,13 @@ export const typography = {
   body: { fontSize: 15, fontWeight: "400" },
   label: { fontSize: 13, fontWeight: "600" },
   caption: { fontSize: 12, fontWeight: "500" },
+} as const;
+
+/** Soft lift used on white cards. Kept in one place so it stays consistent. */
+export const elevation = {
+  shadowColor: "#1B2559",
+  shadowOpacity: 0.06,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 6 },
+  elevation: 2,
 } as const;

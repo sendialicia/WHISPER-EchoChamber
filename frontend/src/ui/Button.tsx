@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { colors, radius, spacing, typography } from "../theme";
 
-/** The magenta call to action — "Done", "Analyze Deeply", "Check tone". */
+/** The blue call to action — "Next", "Play", "Submit", "Done". */
 export function PrimaryButton({
   label,
   onPress,
@@ -30,30 +30,32 @@ export function PrimaryButton({
       onPress={onPress}
       disabled={inactive}
       style={({ pressed }) => [
-        styles.button,
+        styles.primary,
+        pressed && !inactive && styles.primaryPressed,
         inactive && styles.inactive,
-        pressed && !inactive && styles.pressed,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={colors.ink} />
+        <ActivityIndicator color={colors.onDark} />
       ) : (
-        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.primaryLabel}>{label}</Text>
       )}
     </Pressable>
   );
 }
 
-/** Lower-emphasis action that sits on the gradient rather than on a card. */
+/** Lower-emphasis action — "Skip", "Ignore", secondary navigation. */
 export function GhostButton({
   label,
   onPress,
   disabled = false,
+  style,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  style?: ViewStyle;
 }) {
   return (
     <Pressable
@@ -63,8 +65,9 @@ export function GhostButton({
       disabled={disabled}
       style={({ pressed }) => [
         styles.ghost,
+        pressed && !disabled && styles.ghostPressed,
         disabled && styles.inactive,
-        pressed && !disabled && styles.pressed,
+        style,
       ]}
     >
       <Text style={styles.ghostLabel}>{label}</Text>
@@ -72,35 +75,99 @@ export function GhostButton({
   );
 }
 
+/** Button that sits on a dark feature card — "See Full Breakdown". */
+export function OnDarkButton({
+  label,
+  onPress,
+  style,
+}: {
+  label: string;
+  onPress: () => void;
+  style?: ViewStyle;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.onDark, pressed && styles.inactive, style]}
+    >
+      <Text style={styles.onDarkLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/** Segmented control — the Breakdown / History switch. */
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: readonly T[];
+  value: T;
+  onChange: (next: T) => void;
+}) {
+  return (
+    <>
+      {options.map((option) => {
+        const active = option === value;
+        return (
+          <Pressable
+            key={option}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            onPress={() => onChange(option)}
+            style={[styles.segment, active && styles.segmentActive]}
+          >
+            <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>
+              {option}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </>
+  );
+}
+
+const BASE = {
+  borderRadius: radius.md,
+  paddingVertical: spacing.md,
+  paddingHorizontal: spacing.lg,
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 52,
+} as const;
+
 const styles = StyleSheet.create({
-  button: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 52,
-  },
-  label: {
-    ...typography.heading,
-    color: colors.ink,
-  },
+  primary: { ...BASE, backgroundColor: colors.primary },
+  primaryPressed: { backgroundColor: colors.primaryPressed },
+  primaryLabel: { ...typography.heading, color: colors.onDark },
+
   ghost: {
-    borderRadius: radius.md,
+    ...BASE,
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
-    backgroundColor: colors.glassRaised,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    borderColor: colors.fieldBorder,
+  },
+  ghostPressed: { backgroundColor: colors.groundSoft },
+  ghostLabel: { ...typography.label, color: colors.ink },
+
+  onDark: {
+    ...BASE,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    minHeight: 44,
+    paddingVertical: spacing.sm,
+  },
+  onDarkLabel: { ...typography.label, color: colors.onDark },
+
+  segment: {
+    flex: 1,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.sm,
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: 52,
   },
-  ghostLabel: {
-    ...typography.label,
-    color: colors.ink,
-  },
-  inactive: { opacity: 0.45 },
-  pressed: { opacity: 0.8 },
+  segmentActive: { backgroundColor: colors.primary },
+  segmentLabel: { ...typography.label, color: colors.inkSoft },
+  segmentLabelActive: { color: colors.onDark },
+
+  inactive: { opacity: 0.5 },
 });

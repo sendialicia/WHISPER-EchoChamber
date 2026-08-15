@@ -22,26 +22,45 @@ Android and `localhost` on iOS automatically. On a physical device, set
 
 ```
 src/
-  api/        fetch client + types mirroring the backend
-  auth/       Supabase anonymous sign-in, session in the device keystore
-  scan/       screenshot preparation (resize + compress before upload)
-  screens/    one per bottom tab
-  ui/         shared components built from theme.ts
-  theme.ts    every colour and spacing value in the app
+  api/          fetch client + types mirroring the backend
+  auth/         Supabase anonymous sign-in, session in the device keystore
+  navigation/   five tabs, each with its own stack
+  scan/         screenshot preparation (resize + compress before upload)
+  screens/      see the tab map below
+  storage/      on-device streak, bookmarks, scan history
+  ui/           shared components built from theme.ts
+  theme.ts      every colour and spacing value in the app
 modules/
   echo-overlay/   local native module (Kotlin, still a placeholder)
 ```
 
+### Tabs
+
+| Tab | Screens | Backend |
+|---|---|---|
+| Home | Home, Scan | `/scan/*`, `/dashboard/echo-chamber-meter` |
+| Analysis | Breakdown / History | `/dashboard/echo-chamber-meter` + local history |
+| Journal | Journal, Bookmarked | `/dashboard/reflection-journal`, `/dashboard/source-diversity` |
+| Practice | Practice, Perspective Challenge, Compare & Reflect, Exercise | `/practice/*` |
+| Settings | Settings, Tone tester | `/tone/check` |
+
 ## Design
 
-Dark-only. The whole app sits on the navy-to-magenta gradient from the
-mockups, so there is no light theme to maintain and screens should not try
-to build one.
+Light-first: white grounds with pastel gradient washes, and rich
+blue-to-purple cards carrying the important numbers. There is no dark
+variant — screens should not try to build one.
 
 **Every colour lives in `src/theme.ts`.** Nothing else hard-codes one — when
 the final design assets land, correct the values there and the app follows.
 The current values are read off the design screenshots by eye and are
 expected to shift.
+
+## What's local vs what's on the server
+
+Streak, bookmarks, and scan history live in AsyncStorage on the device —
+they have no backend endpoints, and keeping them local matches what the app
+tells the user ("All practice stays private on your device"). Everything
+else comes from the API.
 
 ## Auth
 
@@ -69,6 +88,12 @@ Both paths already hit the same backend endpoints, which take `text` OR
 `imageBase64`. The "Pick a screenshot" button on the Scan screen exercises
 the image path end to end today, with no native code involved — use it to
 check the pipeline before writing any Kotlin.
+
+**Tone check is native too.** In the design it floats over the host app's
+compose box and its "Fix It" button rewrites the draft in place — that means
+reading the field through the accessibility service and writing back with
+`ACTION_SET_TEXT`. The tone tester under Settings is a stand-in that
+exercises the same endpoint from inside the app.
 
 ## Verify
 

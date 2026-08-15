@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, radius, spacing, typography } from "../theme";
+import { colors, gradients, radius, spacing, typography } from "../theme";
 
 /**
  * The staged progress list from the analysis mockup.
@@ -68,7 +68,7 @@ function StageRow({ label, active }: { label: string; active: boolean }) {
       <View style={styles.track}>
         <Animated.View style={[styles.fillWrap, { width }]}>
           <LinearGradient
-            colors={[colors.accentSoft, colors.accent]}
+            colors={gradients.meter}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.fill}
@@ -80,24 +80,16 @@ function StageRow({ label, active }: { label: string; active: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.xl, alignItems: "stretch" },
-  heading: {
-    ...typography.display,
-    color: colors.ink,
-    textAlign: "center",
-  },
+  wrap: { gap: spacing.xl },
+  heading: { ...typography.display, color: colors.ink, textAlign: "center" },
   stages: { gap: spacing.md },
   row: { gap: spacing.sm },
   rowIdle: { opacity: 0.35 },
-  rowLabel: {
-    ...typography.body,
-    color: colors.ink,
-    textAlign: "center",
-  },
+  rowLabel: { ...typography.body, color: colors.inkSoft, textAlign: "center" },
   track: {
-    height: 6,
+    height: 8,
     borderRadius: radius.pill,
-    backgroundColor: colors.glassRaised,
+    backgroundColor: colors.track,
     overflow: "hidden",
   },
   fillWrap: { height: "100%" },

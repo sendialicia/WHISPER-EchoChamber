@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { Screen } from "../ui/Screen";
-import { Card, CardSection } from "../ui/Card";
+import { Screen, ScreenHeader } from "../ui/Screen";
+import { Card, CardSection, OppositeCard } from "../ui/Card";
 import { GhostButton, PrimaryButton } from "../ui/Button";
 import { Pill } from "../ui/Pill";
 import { TextField } from "../ui/TextField";
@@ -10,7 +10,9 @@ import { AnalyzingStages } from "../ui/AnalyzingStages";
 import { analyze, triage } from "../api/scan";
 import { ApiError } from "../api/client";
 import { prepareImageForScan } from "../scan/prepareImage";
+import { recordScan } from "../storage/local";
 import type { AnalyzeResult, ScanContent } from "../api/types";
+import type { HomeScreenProps } from "../navigation/types";
 import { colors, spacing, typography } from "../theme";
 
 /**
@@ -42,11 +44,11 @@ const TACTIC_LABELS: Record<string, string> = {
   ad_hominem: "Ad hominem",
 };
 
-export function ScanScreen() {
+export function ScanScreen({ navigation }: HomeScreenProps<"Scan">) {
   const [draft, setDraft] = useState("");
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
 
-  const run = useCallback(async (content: ScanContent) => {
+  const run = useCallback(async (content: ScanContent, excerpt: string) => {
     try {
       setPhase({ kind: "triaging" });
       const verdict = await triage(content);
@@ -58,17 +60,20 @@ export function ScanScreen() {
 
       setPhase({ kind: "analyzing" });
       const result = await analyze(content);
+      await recordScan({ excerpt, mode: result.mode, tactic: result.tactic });
       setPhase({ kind: "result", result });
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Something went wrong. Try again.";
-      setPhase({ kind: "error", message });
+      setPhase({
+        kind: "error",
+        message: err instanceof ApiError ? err.message : "Something went wrong.",
+      });
     }
   }, []);
 
   const scanText = useCallback(() => {
-    if (!draft.trim()) return;
-    void run({ text: draft.trim() });
+    const text = draft.trim();
+    if (!text) return;
+    void run({ text }, text);
   }, [draft, run]);
 
   const scanScreenshot = useCallback(async () => {
@@ -90,7 +95,7 @@ export function ScanScreen() {
     try {
       setPhase({ kind: "preparing" });
       const content = await prepareImageForScan(picked.assets[0].uri);
-      await run(content);
+      await run(content, "Screenshot");
     } catch (err) {
       setPhase({
         kind: "error",
@@ -99,33 +104,33 @@ export function ScanScreen() {
     }
   }, [run]);
 
-  const reset = useCallback(() => setPhase({ kind: "idle" }), []);
+  const reset = useCallback(() => {
+    setDraft("");
+    setPhase({ kind: "idle" });
+  }, []);
+
+  const busy =
+    phase.kind === "preparing" || phase.kind === "triaging" || phase.kind === "analyzing";
 
   return (
     <Screen>
+      <ScreenHeader title="Scan" onBack={() => navigation.goBack()} />
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Scan</Text>
-          <Text style={styles.subtitle}>
-            Paste something you just read, or pick a screenshot of it.
-          </Text>
-        </View>
-
         {phase.kind === "idle" || phase.kind === "error" ? (
           <View style={styles.form}>
+            <Text style={styles.subtitle}>
+              Paste something you just read, or pick a screenshot of it.
+            </Text>
             <TextField
               value={draft}
               onChangeText={setDraft}
               placeholder="Paste a post or comment…"
             />
-            <PrimaryButton
-              label="Scan this"
-              onPress={scanText}
-              disabled={!draft.trim()}
-            />
+            <PrimaryButton label="Scan this" onPress={scanText} disabled={!draft.trim()} />
             <GhostButton label="Pick a screenshot" onPress={scanScreenshot} />
             {phase.kind === "error" ? (
               <Text style={styles.error}>{phase.message}</Text>
@@ -135,9 +140,7 @@ export function ScanScreen() {
 
         {phase.kind === "preparing" || phase.kind === "triaging" ? (
           <View style={styles.centered}>
-            <Pill
-              label={phase.kind === "preparing" ? "Reading image…" : "Checking…"}
-            />
+            <Pill label={phase.kind === "preparing" ? "Reading image…" : "Checking…"} />
           </View>
         ) : null}
 
@@ -157,25 +160,19 @@ export function ScanScreen() {
         {phase.kind === "result" ? (
           <ResultCard result={phase.result} onDone={reset} />
         ) : null}
+
+        {busy ? null : <View style={styles.spacer} />}
       </ScrollView>
     </Screen>
   );
 }
 
-function ResultCard({
-  result,
-  onDone,
-}: {
-  result: AnalyzeResult;
-  onDone: () => void;
-}) {
+function ResultCard({ result, onDone }: { result: AnalyzeResult; onDone: () => void }) {
   const isFact = result.mode === "fact_context";
 
   return (
     <View style={styles.result}>
-      <Text style={styles.resultHeading}>
-        {isFact ? "Fact Check" : "Tactic Detected"}
-      </Text>
+      <Text style={styles.resultHeading}>{isFact ? "Fact Check" : "Tactic Detected"}</Text>
 
       <Card>
         {!isFact && result.tactic ? (
@@ -191,19 +188,7 @@ function ResultCard({
         ) : null}
 
         {result.side_a ? (
-          <CardSection
-            label={result.side_a.label}
-            body={result.side_a.steelman}
-            icon="🅰️"
-          />
-        ) : null}
-
-        {result.side_b ? (
-          <CardSection
-            label={result.side_b.label}
-            body={result.side_b.steelman}
-            icon="🅱️"
-          />
+          <CardSection label={result.side_a.label} body={result.side_a.steelman} icon="🅰️" />
         ) : null}
 
         {result.common_ground ? (
@@ -215,23 +200,29 @@ function ResultCard({
         ) : null}
       </Card>
 
+      {result.side_b ? (
+        <OppositeCard>
+          <Text style={styles.oppositeLabel}>The Opposite Side</Text>
+          <Text style={styles.oppositeTitle}>{result.side_b.label}</Text>
+          <Text style={styles.oppositeBody}>{result.side_b.steelman}</Text>
+        </OppositeCard>
+      ) : null}
+
       <PrimaryButton label="Done" onPress={onDone} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.xl },
-  header: { gap: spacing.xs },
-  title: { ...typography.display, color: colors.ink },
+  scroll: { paddingBottom: spacing.xxl, gap: spacing.lg },
   subtitle: { ...typography.body, color: colors.inkSoft },
   form: { gap: spacing.md },
   centered: { gap: spacing.xl, paddingVertical: spacing.xl },
-  result: { gap: spacing.lg },
-  resultHeading: {
-    ...typography.title,
-    color: colors.ink,
-    textAlign: "center",
-  },
+  result: { gap: spacing.md },
+  resultHeading: { ...typography.title, color: colors.ink, textAlign: "center" },
+  oppositeLabel: { ...typography.caption, color: colors.inkSoft },
+  oppositeTitle: { ...typography.label, color: colors.ink },
+  oppositeBody: { ...typography.body, color: colors.ink, lineHeight: 21 },
   error: { ...typography.body, color: colors.danger },
+  spacer: { height: spacing.xl },
 });
