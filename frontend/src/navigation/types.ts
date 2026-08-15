@@ -30,6 +30,7 @@ export type PracticeStackParamList = {
 
 export type SettingsStackParamList = {
   Settings: undefined;
+  Permissions: undefined;
   ToneTester: undefined;
 };
 

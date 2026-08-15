@@ -1,10 +1,22 @@
-import { NativeModule, requireNativeModule } from 'expo';
+import { NativeModule, requireNativeModule } from "expo";
 
-import { EchoOverlayModuleEvents } from './EchoOverlay.types';
+declare class EchoOverlayNativeModule extends NativeModule {
+  /** The user has switched the service on in Settings. */
+  isAccessibilityEnabled(): boolean;
+  /** The service is bound and would answer a read right now. */
+  isAccessibilityConnected(): boolean;
+  /** "Display over other apps" is granted. */
+  canDrawOverlay(): boolean;
 
-declare class EchoOverlayModule extends NativeModule<EchoOverlayModuleEvents> {
-  hello(): string;
-  setValueAsync(value: string): Promise<void>;
+  openAccessibilitySettings(): Promise<void>;
+  /** App info page — where Android 13+ hides "Allow restricted settings". */
+  openAppInfo(): Promise<void>;
+  requestOverlayPermission(): Promise<void>;
+
+  /** Visible text of the foreground app, or null if it exposes none. */
+  readScreenText(): Promise<string | null>;
+  /** Base64 JPEG of the screen, or null if the platform refused. */
+  captureScreen(): Promise<string | null>;
 }
 
-export default requireNativeModule<EchoOverlayModule>('EchoOverlay');
+export default requireNativeModule<EchoOverlayNativeModule>("EchoOverlay");

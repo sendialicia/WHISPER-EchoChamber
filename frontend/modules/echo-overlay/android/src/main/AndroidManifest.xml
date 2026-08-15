@@ -1,2 +1,27 @@
-<manifest>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!--
+      exported=true and the BIND_ACCESSIBILITY_SERVICE permission are both
+      required: the system binds this from outside the app, and the permission
+      is what stops anything except the system doing so.
+    -->
+    <!--
+      Fully qualified on purpose. A leading dot in a library manifest resolves
+      against the *application's* package once merged, not this module's
+      namespace, so ".GemaAccessibilityService" would point at a class that
+      does not exist and the service would never appear in Settings.
+    -->
+    <service
+        android:name="expo.modules.echooverlay.GemaAccessibilityService"
+        android:exported="true"
+        android:label="GEMA"
+        android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+      <intent-filter>
+        <action android:name="android.accessibilityservice.AccessibilityService" />
+      </intent-filter>
+      <meta-data
+          android:name="android.accessibilityservice"
+          android:resource="@xml/gema_accessibility_config" />
+    </service>
+  </application>
 </manifest>

@@ -12,6 +12,7 @@ import { PerspectiveChallengeScreen } from "../screens/PerspectiveChallengeScree
 import { CompareReflectScreen } from "../screens/CompareReflectScreen";
 import { ExerciseScreen } from "../screens/ExerciseScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
+import { PermissionsScreen } from "../screens/PermissionsScreen";
 import { ToneScreen } from "../screens/ToneScreen";
 import type {
   HomeStackParamList,
@@ -87,6 +88,7 @@ function SettingsNavigator() {
   return (
     <SettingsStack.Navigator screenOptions={stackOptions}>
       <SettingsStack.Screen name="Settings" component={SettingsScreen} />
+      <SettingsStack.Screen name="Permissions" component={PermissionsScreen} />
       <SettingsStack.Screen name="ToneTester" component={ToneScreen} />
     </SettingsStack.Navigator>
   );

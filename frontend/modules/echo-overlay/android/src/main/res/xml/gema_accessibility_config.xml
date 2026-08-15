@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  canRetrieveWindowContent lets the service read the accessibility tree;
+  canTakeScreenshot enables the silent capture used when a screen exposes no
+  text. Both are the point of the service.
+
+  No packageNames filter, because the user can be reading anything anywhere.
+  typeWindowStateChanged alone is enough to keep the service bound — nothing
+  is done per event, so there is no reason to subscribe to more.
+-->
+<accessibility-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:canTakeScreenshot="true"
+    android:notificationTimeout="200"
+    android:description="@string/gema_accessibility_description"
+    android:summary="@string/gema_accessibility_summary" />

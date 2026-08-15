@@ -22,6 +22,9 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -43,6 +46,11 @@
           "backgroundColor": "#2A56D8"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ccac3361-7916-403e-ab56-e16adfdc4e60"
+      }
+    }
   }
 }

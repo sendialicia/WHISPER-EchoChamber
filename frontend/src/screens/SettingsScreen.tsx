@@ -100,6 +100,17 @@ export function SettingsScreen({ navigation }: SettingsScreenProps<"Settings">) 
           ) : null}
         </Card>
 
+        <Card title="Screen access">
+          <Text style={styles.body}>
+            Lets GEMA read the post you're looking at from inside other apps,
+            which is what the floating button needs.
+          </Text>
+          <GhostButton
+            label="Set up screen access"
+            onPress={() => navigation.navigate("Permissions")}
+          />
+        </Card>
+
         <Card title="Tone check">
           <Text style={styles.body}>
             In the finished app this runs as an overlay on top of whatever

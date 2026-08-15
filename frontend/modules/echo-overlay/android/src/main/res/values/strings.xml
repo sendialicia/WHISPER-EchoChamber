@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Shown on the system's own Accessibility page, which is the last thing
+      someone reads before granting this. It is deliberately blunt about what
+      the service can do rather than selling the feature.
+    -->
+    <string name="gema_accessibility_summary">Lets GEMA read the post you are looking at</string>
+    <string name="gema_accessibility_description">GEMA uses this to read the text on your screen when you tap its button, so it can show you the other side of what you are reading. If a screen exposes no text, it takes a screenshot instead. It only reads when you tap — never in the background — and the text is sent to GEMA\'s server to be analysed. Turn this off at any time to stop it completely.</string>
+</resources>
