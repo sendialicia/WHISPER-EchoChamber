@@ -75,6 +75,19 @@ export const backdrop = {
   crescent: require("../assets/backdrop/glow-crescent.png"),
 } as const;
 
+/**
+ * Pieces of the "Choose A Practice" card. `stack*` are the tilted cards that
+ * peek out behind it to suggest a deck; `ring*` are the concentric arcs that
+ * sit inside it, largest first.
+ */
+export const cardArt = {
+  stackBack: require("../assets/card/stack-back.png"),
+  stackMid: require("../assets/card/stack-mid.png"),
+  ringLarge: require("../assets/card/ring-lg.png"),
+  ringMedium: require("../assets/card/ring-md.png"),
+  ringSmall: require("../assets/card/ring-sm.png"),
+} as const;
+
 /** Screen padding is 24 in the mockups; the rest of the scale follows it. */
 export const spacing = {
   xs: 4,

@@ -8,6 +8,7 @@ export function TextField({
   minHeight = 120,
   editable = true,
   maxLength,
+  multiline = true,
 }: {
   value: string;
   onChangeText: (text: string) => void;
@@ -16,6 +17,8 @@ export function TextField({
   editable?: boolean;
   /** Shows a counter, as on the Perspective Challenge input. */
   maxLength?: number;
+  /** Off for short single-line values, where Enter should submit, not wrap. */
+  multiline?: boolean;
 }) {
   return (
     <View style={[styles.wrap, { minHeight }]}>
@@ -24,13 +27,13 @@ export function TextField({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.inkFaint}
-        multiline
-        textAlignVertical="top"
+        multiline={multiline}
+        textAlignVertical={multiline ? "top" : "center"}
         editable={editable}
         maxLength={maxLength}
         style={styles.input}
       />
-      {maxLength ? (
+      {maxLength && multiline ? (
         <Text style={styles.counter}>
           {value.length}/{maxLength}
         </Text>

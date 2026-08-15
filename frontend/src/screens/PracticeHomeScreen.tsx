@@ -3,7 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native
 import { useFocusEffect } from "@react-navigation/native";
 import { Screen, ScreenHeader } from "../ui/Screen";
 import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
-import { Card, FeatureCard } from "../ui/Card";
+import { Card, StackedFeatureCard } from "../ui/Card";
 import { GhostButton, OnDarkButton } from "../ui/Button";
 import { Flame } from "../ui/Icons";
 import { getPracticeTopic } from "../api/practice";
@@ -66,7 +66,7 @@ export function PracticeHomeScreen({ navigation }: PracticeScreenProps<"Practice
         <Text style={styles.sectionTitle}>Choose A Practice</Text>
 
         {topic ? (
-          <FeatureCard>
+          <StackedFeatureCard>
             <View style={styles.cardTop}>
               <View style={styles.thumb} />
               <View style={styles.datePill}>
@@ -84,7 +84,7 @@ export function PracticeHomeScreen({ navigation }: PracticeScreenProps<"Practice
                 })
               }
             />
-          </FeatureCard>
+          </StackedFeatureCard>
         ) : (
           <Card>
             <Text style={styles.empty}>

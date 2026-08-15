@@ -17,7 +17,11 @@ const KEYS = {
   streak: "echobreaker.streak",
   bookmarks: "echobreaker.bookmarks",
   scans: "echobreaker.scans",
+  name: "echobreaker.name",
 } as const;
+
+/** Longer than this and the greeting stops fitting on one line. */
+export const MAX_NAME_LENGTH = 24;
 
 const MAX_SCANS = 50;
 
@@ -33,6 +37,25 @@ async function readJson<T>(key: string, fallback: T): Promise<T> {
 
 async function writeJson(key: string, value: unknown): Promise<void> {
   await AsyncStorage.setItem(key, JSON.stringify(value));
+}
+
+// -------------------------------------------------------------------- name
+
+/**
+ * What to call the user on the home screen. Local only, and never sent
+ * anywhere — the account itself stays anonymous, so this is a display name in
+ * the plainest sense.
+ *
+ * Null means they haven't been asked yet, which is what triggers the prompt on
+ * first launch. Someone who skips is stored as an empty string so they aren't
+ * asked again.
+ */
+export async function getName(): Promise<string | null> {
+  return AsyncStorage.getItem(KEYS.name);
+}
+
+export async function setName(name: string): Promise<void> {
+  await AsyncStorage.setItem(KEYS.name, name.trim().slice(0, MAX_NAME_LENGTH));
 }
 
 // ------------------------------------------------------------------ streak

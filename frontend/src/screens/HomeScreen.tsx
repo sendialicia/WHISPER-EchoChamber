@@ -10,7 +10,7 @@ import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { getEchoChamberMeter } from "../api/dashboard";
 import { ApiError } from "../api/client";
 import { isAuthConfigured } from "../auth/identity";
-import { getScanHistory, type ScanRecord } from "../storage/local";
+import { getName, getScanHistory, type ScanRecord } from "../storage/local";
 import type { EchoChamberMeterResult } from "../api/types";
 import type { HomeScreenProps } from "../navigation/types";
 import { colors, spacing, typography } from "../theme";
@@ -19,6 +19,7 @@ import { colors, spacing, typography } from "../theme";
 export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
   const [meter, setMeter] = useState<EchoChamberMeterResult | null>(null);
   const [history, setHistory] = useState<ScanRecord[]>([]);
+  const [name, setName] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -26,6 +27,7 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
   const load = useCallback(async () => {
     setLoading(true);
     setHistory(await getScanHistory());
+    setName((await getName()) ?? "");
 
     if (!isAuthConfigured()) {
       setNotice("Connect Supabase to start tracking your echo chamber meter.");
@@ -59,7 +61,9 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
-        <Text style={styles.greeting}>Hi there</Text>
+        {/* Someone who skipped the prompt is stored as an empty name,
+            so the greeting quietly drops the comma rather than trailing off. */}
+        <Text style={styles.greeting}>{name ? `Hi, ${name}` : "Hi there"}</Text>
 
         <FeatureCard>
           <Text style={styles.cardTitle}>Echo Chamber Meter</Text>

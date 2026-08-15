@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   backdrop,
+  cardArt,
   colors,
   elevation,
   gradients,
@@ -50,6 +51,39 @@ export function FeatureCard({
         <Image source={backdrop.crescent} style={styles.featureGlow} resizeMode="cover" />
       </View>
       {children}
+    </View>
+  );
+}
+
+/**
+ * The "Choose A Practice" card: a feature card sitting at the front of a
+ * shallow deck, with concentric arcs inside it.
+ *
+ * The deck and the arcs are the designer's own exported pieces rather than
+ * shapes rebuilt in code — the stack cards carry a slight perspective tilt
+ * and the arcs a pink bloom at their edge, neither of which survives being
+ * approximated with a rotated View and a border-radius.
+ */
+export function StackedFeatureCard({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: ViewStyle;
+}) {
+  return (
+    <View style={styles.deck}>
+      <Image source={cardArt.stackBack} style={styles.stackBack} resizeMode="stretch" />
+      <Image source={cardArt.stackMid} style={styles.stackMid} resizeMode="stretch" />
+
+      <View style={[styles.feature, styles.deckFront, style]}>
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Image source={cardArt.ringLarge} style={styles.ringLarge} resizeMode="contain" />
+          <Image source={cardArt.ringMedium} style={styles.ringMedium} resizeMode="contain" />
+          <Image source={cardArt.ringSmall} style={styles.ringSmall} resizeMode="contain" />
+        </View>
+        {children}
+      </View>
     </View>
   );
 }
@@ -119,6 +153,47 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.sm,
     ...elevation,
+  },
+  deck: { paddingTop: 26 },
+  deckFront: { marginTop: 0 },
+  stackBack: {
+    position: "absolute",
+    top: 0,
+    left: "9%",
+    right: "9%",
+    height: 90,
+    opacity: 0.75,
+  },
+  stackMid: {
+    position: "absolute",
+    top: 13,
+    left: "4%",
+    right: "4%",
+    height: 90,
+  },
+  ringLarge: {
+    position: "absolute",
+    right: -30,
+    bottom: -50,
+    width: 250,
+    height: 340,
+    opacity: 0.55,
+  },
+  ringMedium: {
+    position: "absolute",
+    right: -14,
+    bottom: -20,
+    width: 175,
+    height: 245,
+    opacity: 0.6,
+  },
+  ringSmall: {
+    position: "absolute",
+    right: 6,
+    bottom: 16,
+    width: 92,
+    height: 165,
+    opacity: 0.7,
   },
   feature: {
     backgroundColor: colors.deep,

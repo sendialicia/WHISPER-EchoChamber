@@ -4,19 +4,32 @@ import { Screen, ScreenHeader } from "../ui/Screen";
 import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card } from "../ui/Card";
 import { GhostButton } from "../ui/Button";
+import { TextField } from "../ui/TextField";
 import { API_BASE_URL } from "../api/client";
 import { getUserId, isAuthConfigured } from "../auth/identity";
-import { clearLocalData } from "../storage/local";
+import {
+  MAX_NAME_LENGTH,
+  clearLocalData,
+  getName,
+  setName,
+} from "../storage/local";
 import type { SettingsScreenProps } from "../navigation/types";
 import { colors, spacing, typography } from "../theme";
 
 /** Privacy, connection state, and the surfaces that only exist for testing. */
 export function SettingsScreen({ navigation }: SettingsScreenProps<"Settings">) {
   const [userId, setUserId] = useState<string | null>(null);
+  const [name, setNameValue] = useState("");
 
   useEffect(() => {
     void getUserId().then(setUserId);
+    void getName().then((stored) => setNameValue(stored ?? ""));
   }, []);
+
+  const saveName = useCallback(async () => {
+    await setName(name);
+    Alert.alert("Saved", name.trim() ? `We'll call you ${name.trim()}.` : "Greeting reset.");
+  }, [name]);
 
   const confirmClear = useCallback(() => {
     Alert.alert(
@@ -43,6 +56,22 @@ export function SettingsScreen({ navigation }: SettingsScreenProps<"Settings">) 
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
+        <Card title="Your name">
+          <Text style={styles.body}>
+            Only used for the greeting on your home screen. It stays on this
+            device and is never sent anywhere.
+          </Text>
+          <TextField
+            value={name}
+            onChangeText={setNameValue}
+            placeholder="Your name"
+            minHeight={52}
+            maxLength={MAX_NAME_LENGTH}
+            multiline={false}
+          />
+          <GhostButton label="Save name" onPress={saveName} />
+        </Card>
+
         <Card title="Your data">
           <Text style={styles.body}>
             Your streak, bookmarks, and scan history stay on this device.
