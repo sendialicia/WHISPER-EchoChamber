@@ -1,22 +1,37 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { getAuthHeaders } from "../auth/identity";
 
+/** The port the backend listens on. Matches PORT in backend/.env. */
+const BACKEND_PORT = 3000;
+
 /**
- * Base URL for the backend.
+ * In development, follow whichever machine is serving the bundle.
  *
- * Android emulators reach the host machine through 10.0.2.2 — plain
- * localhost points at the emulator itself. iOS simulators share the host's
- * network stack, so localhost is correct there.
- *
- * A physical device can reach neither: set EXPO_PUBLIC_API_URL to the host's
- * LAN address (e.g. http://192.168.1.20:3000) in .env before starting.
+ * `hostUri` looks like "192.168.1.199:8081" — the dev machine's current
+ * address, which is also the one running the backend. Deriving the API host
+ * from it means a laptop that moves between networks (or on and off a phone
+ * hotspot) keeps working without anyone editing .env, which is otherwise a
+ * silent failure: the app just stops reaching the backend.
  */
-const DEFAULT_BASE_URL = Platform.select({
-  android: "http://10.0.2.2:3000",
-  default: "http://localhost:3000",
+function hostFromDevServer(): string | undefined {
+  const host = Constants.expoConfig?.hostUri?.split(":")[0];
+  return host ? `http://${host}:${BACKEND_PORT}` : undefined;
+}
+
+/**
+ * Last resort when there's no dev server to learn from. Android emulators
+ * reach the host machine through 10.0.2.2 — plain localhost points at the
+ * emulator itself. iOS simulators share the host's network stack.
+ */
+const FALLBACK_BASE_URL = Platform.select({
+  android: `http://10.0.2.2:${BACKEND_PORT}`,
+  default: `http://localhost:${BACKEND_PORT}`,
 });
 
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_BASE_URL;
+/** EXPO_PUBLIC_API_URL wins when set — needed once the backend isn't local. */
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? hostFromDevServer() ?? FALLBACK_BASE_URL;
 
 /** How long to wait before giving up. Analysis runs a "deep" model call. */
 const TIMEOUT_MS = 45_000;
