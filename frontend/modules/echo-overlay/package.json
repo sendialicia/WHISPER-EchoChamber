@@ -1,0 +1,7 @@
+{
+  "name": "echo-overlay",
+  "version": "0.1.0",
+  "description": "Floating overlay button and screen reading for GEMA",
+  "main": "index.ts",
+  "private": true
+}
