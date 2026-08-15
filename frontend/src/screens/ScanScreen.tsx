@@ -115,7 +115,7 @@ export function ScanScreen({ navigation }: HomeScreenProps<"Scan">) {
     if (!permission.granted) {
       setPhase({
         kind: "error",
-        message: "EchoBreaker needs photo access to read a screenshot.",
+        message: "GEMA needs photo access to read a screenshot.",
       });
       return;
     }

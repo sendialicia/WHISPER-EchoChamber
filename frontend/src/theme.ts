@@ -1,5 +1,5 @@
 /**
- * Design tokens for EchoBreaker.
+ * Design tokens for GEMA.
  *
  * Every value here was sampled pixel-by-pixel from the Figma exports in
  * `design/`, so these are the design's actual colours rather than an

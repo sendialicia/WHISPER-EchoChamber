@@ -1,7 +1,9 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import type { GestureResponderEvent } from "react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
+import { useRipple } from "./Ripple";
 import { colors, elevation, radius, spacing, typography } from "../theme";
 
 /**
@@ -64,6 +66,7 @@ function TabIcon({ name, color }: { name: string; color: string }) {
 
 export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const ripple = useRipple();
 
   return (
     <View
@@ -77,13 +80,16 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           const label =
             typeof options.tabBarLabel === "string" ? options.tabBarLabel : route.name;
 
-          const onPress = () => {
+          const onPress = (e: GestureResponderEvent) => {
             const event = navigation.emit({
               type: "tabPress",
               target: route.key,
               canPreventDefault: true,
             });
             if (!focused && !event.defaultPrevented) {
+              // Wash out from the touch itself, so the echo starts where the
+              // finger is rather than from the middle of the button.
+              ripple(e.nativeEvent.pageX, e.nativeEvent.pageY);
               navigation.navigate(route.name);
             }
           };

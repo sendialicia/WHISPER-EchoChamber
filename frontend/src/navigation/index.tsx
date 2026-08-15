@@ -99,7 +99,9 @@ export function RootNavigator() {
     <NavigationContainer theme={navigationTheme}>
       <Tab.Navigator
         tabBar={(props) => <TabBar {...props} />}
-        screenOptions={{ headerShown: false }}
+        // The ripple washes over the swap; a crossfade underneath keeps the
+        // swap itself from being a hard cut.
+        screenOptions={{ headerShown: false, animation: "fade" }}
       >
         <Tab.Screen name="Home" component={HomeNavigator} />
         <Tab.Screen name="Analysis" component={AnalysisScreen} />

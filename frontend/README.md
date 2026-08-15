@@ -1,6 +1,11 @@
-# EchoBreaker — Mobile App
+# GEMA — Mobile App
 
 React Native (Expo SDK 57) client for the echo-chamber-breaking app.
+
+The app is **GEMA** (Indonesian for *echo*). `android.package` is still
+`com.echobreaker.app` from before the rename — it is never shown to anyone,
+and changing it would install as a separate app on devices that already have
+this one.
 
 ## Setup
 
@@ -46,14 +51,40 @@ modules/
 
 ## Design
 
-Light-first: white grounds with pastel gradient washes, and rich
-blue-to-purple cards carrying the important numbers. There is no dark
+Light-only: a white-blue ground (`#F5F8FF`) carrying soft coloured glows,
+with deep indigo cards (`#1026A2`) for the headline numbers. There is no dark
 variant — screens should not try to build one.
 
-**Every colour lives in `src/theme.ts`.** Nothing else hard-codes one — when
-the final design assets land, correct the values there and the app follows.
-The current values are read off the design screenshots by eye and are
-expected to shift.
+**Every colour lives in `src/theme.ts`**, sampled pixel-by-pixel from the
+Figma exports kept in `design/`. Nothing else hard-codes one, so re-sampling
+those exports and correcting the tokens updates the whole app.
+
+Two pieces are load-bearing and easy to break:
+
+- **The tab bar floats.** It is a pill group hovering over the content, not a
+  bar pinned to the edge, so every screen's scroll content must end with
+  `paddingBottom: TAB_BAR_CLEARANCE` or the last item hides underneath it.
+- **The meter is a 250° arc**, gap at the bottom. Its start angle is derived
+  from the sweep so both tips sit level; hard-coding an angle puts the opening
+  somewhere else.
+
+The glows behind each screen are the designer's own exported PNGs
+(`assets/backdrop/`) rather than CSS gradients — their falloff is hand-tuned
+and an approximation reads flatter.
+
+### Launch and motion
+
+`src/ui/Landing.tsx` is the launch animation: the mark inside a white disc
+with rings pulsing outward. The logo is a wave radiating from a source and
+*gema* means echo, so the launch gesture is the brand's own rather than a
+spinner. It mounts **over** the navigator and fades out, so the app is already
+rendered behind it.
+
+`src/ui/Ripple.tsx` plays the same gesture on a tab change: a translucent disc
+expands from the touch point and sweeps off screen. It runs over an
+already-completed navigation rather than gating it — the destination is live
+underneath the whole time, so a dropped frame can never strand anyone on a
+blank page.
 
 ## What's local vs what's on the server
 

@@ -11,6 +11,8 @@ import type { AnalyzeResult } from "../api/types";
  * stay on the device.
  */
 
+// Prefix predates the rename to GEMA. Left alone deliberately: changing it
+// would orphan the streak and bookmarks already on people's devices.
 const KEYS = {
   streak: "echobreaker.streak",
   bookmarks: "echobreaker.bookmarks",
