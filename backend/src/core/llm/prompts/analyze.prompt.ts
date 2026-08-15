@@ -17,6 +17,14 @@ Rules:
   the side presented in the content AND the opposing side. Never strawman.
 - Identify the primary framing tactic, if any, from this list: ${FRAMING_TACTICS.join(", ")}.
 - Identify common ground between the two sides, if any exists honestly.
+- Name the underlying subject as a "topic" slug: lowercase snake_case, two or
+  three words, naming the general debate rather than this specific post — so
+  the same slug comes back for any content about it. Prefer the plainest name
+  ("minimum_wage", not "wage_floor_debate_2026"). Null only if there is no
+  identifiable subject.
+- Set "side_shown" to which side the CONTENT ITSELF is arguing: "a" if it
+  argues side_a, "b" if it argues side_b, null if it is even-handed or if
+  mode is fact_context. This is about the content's own stance, not yours.
 - Be concise. This will render in a small mobile card.
 
 Respond ONLY with JSON, no preamble, matching exactly this shape:
@@ -27,7 +35,9 @@ Respond ONLY with JSON, no preamble, matching exactly this shape:
   "side_b": { "label": string, "steelman": string } | null,
   "fact_summary": string | null,
   "common_ground": string | null,
-  "context_note": string | null
+  "context_note": string | null,
+  "topic": string | null,
+  "side_shown": "a" | "b" | null
 }`;
 
 export function buildAnalyzePrompt(text: string | undefined, sourceContext?: string): string {

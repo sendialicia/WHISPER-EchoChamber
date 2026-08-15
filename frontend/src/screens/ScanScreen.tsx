@@ -7,8 +7,9 @@ import { GhostButton, PrimaryButton } from "../ui/Button";
 import { Pill } from "../ui/Pill";
 import { TextField } from "../ui/TextField";
 import { AnalyzingStages } from "../ui/AnalyzingStages";
-import { analyze, triage } from "../api/scan";
+import { analyze, logScan, triage } from "../api/scan";
 import { ApiError } from "../api/client";
+import { isAuthConfigured } from "../auth/identity";
 import { prepareImageForScan } from "../scan/prepareImage";
 import { recordScan } from "../storage/local";
 import type { AnalyzeResult, ScanContent } from "../api/types";
@@ -54,7 +55,10 @@ export function ScanScreen({ navigation }: HomeScreenProps<"Scan">) {
   const runAnalysis = useCallback(async (content: ScanContent, excerpt: string) => {
     setPhase({ kind: "analyzing" });
     const result = await analyze(content);
+
     await recordScan({ excerpt, mode: result.mode, tactic: result.tactic });
+    await syncScanLog(content, excerpt, result);
+
     setPhase({ kind: "result", result });
   }, []);
 
@@ -205,6 +209,40 @@ export function ScanScreen({ navigation }: HomeScreenProps<"Scan">) {
       </ScrollView>
     </Screen>
   );
+}
+
+/**
+ * Sends the scan to the server so it counts toward the dashboard.
+ *
+ * This is what feeds the Echo Chamber Meter, the Reflection Journal, and the
+ * source-diversity nudges — none of them have any other input, so a scan that
+ * isn't logged is invisible to all three.
+ *
+ * Deliberately non-fatal: the user already has their analysis on screen, and
+ * losing one row from a history aggregate is not worth turning that into an
+ * error. It stays silent when Supabase isn't configured, since the route
+ * requires a verified token.
+ */
+async function syncScanLog(
+  content: ScanContent,
+  excerpt: string,
+  result: AnalyzeResult
+): Promise<void> {
+  if (!isAuthConfigured()) return;
+
+  try {
+    await logScan({
+      // The column is NOT NULL; a screenshot has no text of its own, so the
+      // local excerpt stands in for it.
+      sourceText: content.text ?? excerpt,
+      mode: result.mode,
+      tactic: result.tactic,
+      ...(result.topic ? { topic: result.topic } : {}),
+      ...(result.side_shown ? { sideShown: result.side_shown } : {}),
+    });
+  } catch (err) {
+    console.warn("[scan] couldn't record this scan to your history:", err);
+  }
 }
 
 function ResultCard({ result, onDone }: { result: AnalyzeResult; onDone: () => void }) {

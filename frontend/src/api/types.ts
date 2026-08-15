@@ -72,6 +72,10 @@ export interface AnalyzeResult {
   fact_summary: string | null;
   common_ground: string | null;
   context_note: string | null;
+  /** snake_case slug for the underlying debate; groups dashboard history. */
+  topic: string | null;
+  /** Which side the scanned content argued — what the meter measures. */
+  side_shown: "a" | "b" | null;
 }
 
 export interface ScanLogRequest {

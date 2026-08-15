@@ -32,6 +32,8 @@ export async function runAnalysis(req: AnalyzeRequest): Promise<AnalyzeResult> {
     fact_summary: "Analysis unavailable — please try again.",
     common_ground: null,
     context_note: null,
+    topic: null,
+    side_shown: null,
   };
 
   return reconcileMode(json);

@@ -38,4 +38,16 @@ export interface AnalyzeResult {
   fact_summary: string | null;
   common_ground: string | null;
   context_note: string | null;
+  /**
+   * snake_case slug for the underlying debate, stable across posts about the
+   * same subject. The dashboard groups history by this, and source-diversity
+   * matches it against the curated `diverse_reads` table.
+   */
+  topic: string | null;
+  /**
+   * Which side the scanned content was itself arguing. This is what the Echo
+   * Chamber Meter measures — a run of scans all showing the same side is what
+   * makes the score climb.
+   */
+  side_shown: "a" | "b" | null;
 }
