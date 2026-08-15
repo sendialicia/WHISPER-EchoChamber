@@ -41,8 +41,8 @@ export function TextField({
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: colors.field,
-    borderColor: colors.fieldBorder,
+    backgroundColor: colors.card,
+    borderColor: colors.cardBorder,
     borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing.md,

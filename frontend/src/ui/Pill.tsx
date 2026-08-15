@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
 
   tag: {
     alignSelf: "flex-start",
-    backgroundColor: colors.accentSoft,
+    backgroundColor: colors.track,
     borderRadius: radius.pill,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,

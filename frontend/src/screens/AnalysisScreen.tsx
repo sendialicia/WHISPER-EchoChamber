@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card, InfoCard } from "../ui/Card";
 import { SegmentedControl } from "../ui/Button";
 import { ShareBar } from "../ui/Progress";
@@ -50,12 +51,10 @@ export function AnalysisScreen() {
   );
 
   return (
-    <Screen>
+    <Screen backdrop="analysis">
       <ScreenHeader title="Echo Chamber Analysis" />
 
-      <View style={styles.segments}>
-        <SegmentedControl options={TABS} value={tab} onChange={setTab} />
-      </View>
+      <SegmentedControl options={TABS} value={tab} onChange={setTab} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -180,24 +179,14 @@ function groupByDay(records: ScanRecord[]): [string, ScanRecord[]][] {
 }
 
 const styles = StyleSheet.create({
-  segments: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    backgroundColor: colors.card,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    padding: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  scroll: { paddingBottom: spacing.xxl },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, paddingTop: spacing.lg },
   stack: { gap: spacing.md },
   readout: { alignItems: "center", gap: spacing.xs, paddingVertical: spacing.md },
-  percent: { fontSize: 44, fontWeight: "700", color: colors.primary },
-  percentLabel: { ...typography.heading, color: colors.ink },
+  percent: { ...typography.hero, color: colors.ink },
+  percentLabel: { ...typography.title, color: colors.ink },
   percentCaption: {
     ...typography.caption,
-    color: colors.inkSoft,
+    color: colors.deep,
     textAlign: "center",
     lineHeight: 18,
   },

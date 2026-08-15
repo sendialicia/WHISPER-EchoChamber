@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card, CardSection } from "../ui/Card";
 import { GhostButton, PrimaryButton } from "../ui/Button";
 import { Pill } from "../ui/Pill";
@@ -48,7 +49,7 @@ export function ToneScreen({ navigation }: SettingsScreenProps<"ToneTester">) {
   }, [result]);
 
   return (
-    <Screen>
+    <Screen backdrop="home">
       <ScreenHeader title="Tone tester" onBack={() => navigation.goBack()} />
 
       <ScrollView
@@ -104,7 +105,7 @@ export function ToneScreen({ navigation }: SettingsScreenProps<"ToneTester">) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.md },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.md },
   result: { gap: spacing.sm },
   error: { ...typography.body, color: colors.danger },
 });

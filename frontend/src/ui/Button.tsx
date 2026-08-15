@@ -3,11 +3,12 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  View,
   type ViewStyle,
 } from "react-native";
 import { colors, radius, spacing, typography } from "../theme";
 
-/** The blue call to action — "Next", "Play", "Submit", "Done". */
+/** The bright blue call to action — "Play", "Next", "Submit", "Done". */
 export function PrimaryButton({
   label,
   onPress,
@@ -75,7 +76,7 @@ export function GhostButton({
   );
 }
 
-/** Button that sits on a dark feature card — "See Full Breakdown". */
+/** Sits on a deep card — "See Full Breakdown", "Play". */
 export function OnDarkButton({
   label,
   onPress,
@@ -96,7 +97,24 @@ export function OnDarkButton({
   );
 }
 
-/** Segmented control — the Breakdown / History switch. */
+/** The pink "View All" affordance beside a section heading. */
+export function LinkButton({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      hitSlop={12}
+      style={({ pressed }) => (pressed ? styles.inactive : undefined)}
+    >
+      <Text style={styles.link}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/**
+ * The Breakdown / History switch. The mockup draws these as two separate
+ * pills rather than segments inside a shared track, so there is no container.
+ */
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -107,7 +125,7 @@ export function SegmentedControl<T extends string>({
   onChange: (next: T) => void;
 }) {
   return (
-    <>
+    <View style={styles.segments}>
       {options.map((option) => {
         const active = option === value;
         return (
@@ -124,7 +142,7 @@ export function SegmentedControl<T extends string>({
           </Pressable>
         );
       })}
-    </>
+    </View>
   );
 }
 
@@ -146,28 +164,39 @@ const styles = StyleSheet.create({
     ...BASE,
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.fieldBorder,
+    borderColor: colors.cardBorder,
   },
-  ghostPressed: { backgroundColor: colors.groundSoft },
+  ghostPressed: { backgroundColor: colors.track },
   ghostLabel: { ...typography.label, color: colors.ink },
 
   onDark: {
     ...BASE,
-    backgroundColor: "rgba(255, 255, 255, 0.18)",
-    minHeight: 44,
+    backgroundColor: colors.primary,
+    minHeight: 46,
     paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
   },
-  onDarkLabel: { ...typography.label, color: colors.onDark },
+  onDarkLabel: { ...typography.heading, color: colors.onDark },
 
+  link: {
+    ...typography.label,
+    color: colors.accent,
+    textDecorationLine: "underline",
+  },
+
+  segments: { flexDirection: "row", gap: spacing.md },
   segment: {
     flex: 1,
     borderRadius: radius.pill,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     alignItems: "center",
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
-  segmentActive: { backgroundColor: colors.primary },
-  segmentLabel: { ...typography.label, color: colors.inkSoft },
+  segmentActive: { backgroundColor: colors.deep, borderColor: colors.deep },
+  segmentLabel: { ...typography.heading, color: colors.ink },
   segmentLabelActive: { color: colors.onDark },
 
-  inactive: { opacity: 0.5 },
+  inactive: { opacity: 0.6 },
 });

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { InfoCard } from "../ui/Card";
 import { GhostButton, PrimaryButton } from "../ui/Button";
 import { StepDots } from "../ui/Progress";
@@ -19,7 +20,7 @@ export function PerspectiveChallengeScreen({
   const [attempt, setAttempt] = useState("");
 
   return (
-    <Screen>
+    <Screen backdrop="practice">
       <ScreenHeader title="Perspective Challenge" onBack={() => navigation.goBack()} />
 
       <ScrollView
@@ -63,7 +64,7 @@ export function PerspectiveChallengeScreen({
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.md },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.md },
   question: {
     ...typography.title,
     color: colors.ink,

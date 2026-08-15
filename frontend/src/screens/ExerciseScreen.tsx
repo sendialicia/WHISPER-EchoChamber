@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card, InfoCard, OppositeCard } from "../ui/Card";
 import { PrimaryButton } from "../ui/Button";
 import { StepDots } from "../ui/Progress";
@@ -49,7 +50,7 @@ export function ExerciseScreen({ navigation }: PracticeScreenProps<"Exercise">) 
   }, []);
 
   return (
-    <Screen>
+    <Screen backdrop="practice">
       <ScreenHeader title="Exercise" onBack={() => navigation.goBack()} />
 
       <ScrollView
@@ -122,7 +123,7 @@ export function ExerciseScreen({ navigation }: PracticeScreenProps<"Exercise">) 
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.md },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.md },
   question: {
     ...typography.title,
     color: colors.ink,

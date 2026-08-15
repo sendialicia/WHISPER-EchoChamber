@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text } from "react-native";
 import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card, InfoCard, OppositeCard } from "../ui/Card";
 import { PrimaryButton } from "../ui/Button";
 import { StepDots } from "../ui/Progress";
@@ -49,7 +50,7 @@ export function CompareReflectScreen({
   const next = useCallback(() => navigation.navigate("Exercise"), [navigation]);
 
   return (
-    <Screen>
+    <Screen backdrop="practice">
       <ScreenHeader title="Compare & Reflect" onBack={() => navigation.goBack()} />
 
       <ScrollView
@@ -95,7 +96,7 @@ export function CompareReflectScreen({
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.sm },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.sm },
   label: { ...typography.label, color: colors.ink, marginTop: spacing.sm },
   body: { ...typography.body, color: colors.inkSoft, lineHeight: 21 },
   oppositeBody: { ...typography.body, color: colors.ink, lineHeight: 21 },

@@ -1,47 +1,53 @@
 /**
  * Design tokens for EchoBreaker.
  *
- * Light-first: the mockups are white with pastel gradient washes, and rich
- * blue-to-purple cards carrying the important numbers. There is no dark
- * variant — screens should not try to build one.
+ * Every value here was sampled pixel-by-pixel from the Figma exports in
+ * `design/`, so these are the design's actual colours rather than an
+ * approximation. Nothing outside this file hard-codes a colour — correcting a
+ * token here updates the whole app.
  *
- * NOTE: these values are read off the design screenshots by eye. When the
- * Figma or final PNGs land, correct them HERE and the whole app follows —
- * nothing outside this file should hard-code a colour.
+ * Light-only: white-blue grounds with soft coloured glows, and deep indigo
+ * cards carrying the headline numbers. There is no dark variant.
  */
 
 export const colors = {
-  /** Page ground. Slightly cool so the pastel washes sit on something. */
-  ground: "#FFFFFF",
-  groundSoft: "#F6F7FC",
+  /** Page ground. Cards sit only a shade above it, so depth comes from shadow. */
+  ground: "#F5F8FF",
+  card: "#F9FBFF",
+  cardBorder: "#FFFFFF",
 
-  /** Primary action — "Next", "Play", "Submit", the active tab pill. */
-  primary: "#1F31D1",
-  primaryPressed: "#1829A8",
-  /** The deep navy anchoring the feature cards. */
-  primaryDeep: "#16207A",
+  /** Deep indigo — feature cards, the active tab pill, segmented selection. */
+  deep: "#1026A2",
+  deepPressed: "#0C1D80",
 
-  /** Accent — bookmarks, the meter arc, progress dots, destructive-ish flags. */
-  accent: "#FF2D8E",
-  accentSoft: "#FFD3E8",
+  /** Bright blue — "Play", "See Full Breakdown", primary actions. */
+  primary: "#4488FF",
+  primaryPressed: "#358AFF",
+  primarySoft: "#5BA6FF",
 
-  /** White panels on the ground. */
-  card: "#FFFFFF",
-  cardBorder: "#EDEFF7",
+  /** Accent — "View All", the hot end of the meter, bookmarks. */
+  accent: "#FF359A",
 
-  /** Text on light surfaces. */
-  ink: "#14161F",
-  inkSoft: "#6B7280",
-  inkFaint: "#9CA3AF",
+  /** The meter's cool end, and the streak flame. */
+  cyan: "#3ACBDF",
+  cyanMuted: "#5CB1D3",
 
-  /** Text on the blue/purple cards. */
+  /** Muted indigo used for placeholder blocks inside feature cards. */
+  lavender: "#828FD1",
+
+  /** Text. The design uses true black for headings, not a soft grey. */
+  ink: "#000000",
+  inkSoft: "#5C5D60",
+  inkFaint: "#8E9099",
+
+  /** Text on deep/primary surfaces. */
   onDark: "#FFFFFF",
-  onDarkSoft: "rgba(255, 255, 255, 0.78)",
+  onDarkSoft: "rgba(255, 255, 255, 0.82)",
 
-  /** Inputs and inert tracks. */
-  field: "#FFFFFF",
-  fieldBorder: "#E3E6F2",
-  track: "#EDEFF7",
+  /** Frosted circles in the tab bar, and inert tracks. */
+  frost: "rgba(137, 167, 209, 0.28)",
+  frostBorder: "rgba(255, 255, 255, 0.65)",
+  track: "#E4EBF8",
 
   /** Semantic states, deliberately separate from the pink accent. */
   positive: "#12B76A",
@@ -49,25 +55,27 @@ export const colors = {
   danger: "#E4405F",
 } as const;
 
-/**
- * Gradients, as tuples LinearGradient can take directly.
- * Named for the role they play, not the hues they contain.
- */
 export const gradients = {
-  /** Ambient wash behind a whole screen. */
-  page: ["#FFFFFF", "#F7F5FE", "#EFF3FE"],
-  /** The hero card — Echo Chamber Meter, "Choose A Practice". */
-  feature: ["#1E2A78", "#37299A", "#5B2E9E"],
-  /** Informational callouts — "Tip!", "What's this mean?", "Results!". */
-  info: ["#2B49E0", "#4269F2"],
-  /** The opposing view, and quoted content under analysis. */
-  opposite: ["#FBDCEF", "#E7C6F2"],
-  /** The meter arc: cool through to accent as the skew climbs. */
-  meter: ["#3DD9D0", "#4A6CF7", "#FF2D8E"],
+  /** The meter arc and the perspective bars: cool → indigo → hot. */
+  meter: [colors.cyanMuted, colors.primary, colors.accent],
+  /** Informational callouts — "What's this mean?", "Tip!", "Results!". */
+  info: ["#4488FF", "#5BA6FF"],
   /** Emotional-history chips in the journal. */
-  chip: ["#5B6BF0", "#B24BD6"],
+  chip: ["#4488FF", "#BB54BF"],
+  /** The opposing view, and quoted content under analysis. */
+  opposite: ["#F7D9EE", "#E3C6F4"],
 } as const;
 
+/** Decorative glows layered behind screen content. */
+export const backdrop = {
+  blue: require("../assets/backdrop/glow-blue.png"),
+  cyan: require("../assets/backdrop/glow-cyan.png"),
+  yellow: require("../assets/backdrop/glow-yellow.png"),
+  magenta: require("../assets/backdrop/glow-magenta.png"),
+  crescent: require("../assets/backdrop/glow-crescent.png"),
+} as const;
+
+/** Screen padding is 24 in the mockups; the rest of the scale follows it. */
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -78,27 +86,27 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 10,
-  md: 16,
-  lg: 24,
-  xl: 32,
+  sm: 12,
+  md: 20,
+  lg: 28,
   pill: 999,
 } as const;
 
 export const typography = {
-  display: { fontSize: 30, fontWeight: "700" },
-  title: { fontSize: 22, fontWeight: "700" },
-  heading: { fontSize: 17, fontWeight: "600" },
+  hero: { fontSize: 44, fontWeight: "800" },
+  display: { fontSize: 26, fontWeight: "800" },
+  title: { fontSize: 21, fontWeight: "800" },
+  heading: { fontSize: 17, fontWeight: "700" },
   body: { fontSize: 15, fontWeight: "400" },
-  label: { fontSize: 13, fontWeight: "600" },
+  label: { fontSize: 14, fontWeight: "700" },
   caption: { fontSize: 12, fontWeight: "500" },
 } as const;
 
-/** Soft lift used on white cards. Kept in one place so it stays consistent. */
+/** Cards read as barely-raised glass, so the shadow does the separating. */
 export const elevation = {
-  shadowColor: "#1B2559",
-  shadowOpacity: 0.06,
-  shadowRadius: 16,
+  shadowColor: "#1026A2",
+  shadowOpacity: 0.1,
+  shadowRadius: 14,
   shadowOffset: { width: 0, height: 6 },
-  elevation: 2,
+  elevation: 3,
 } as const;

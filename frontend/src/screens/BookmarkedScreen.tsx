@@ -2,7 +2,9 @@ import { useCallback, useState } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card } from "../ui/Card";
+import { Bookmark as BookmarkIcon } from "../ui/Icons";
 import { getBookmarks, toggleBookmark, type Bookmark } from "../storage/local";
 import type { JournalScreenProps } from "../navigation/types";
 import { colors, spacing, typography } from "../theme";
@@ -22,7 +24,7 @@ export function BookmarkedScreen({ navigation }: JournalScreenProps<"Bookmarked"
   }, []);
 
   return (
-    <Screen>
+    <Screen backdrop="journal">
       <ScreenHeader title="Bookmarked" onBack={() => navigation.goBack()} />
 
       <ScrollView
@@ -57,7 +59,7 @@ export function BookmarkedScreen({ navigation }: JournalScreenProps<"Bookmarked"
                   accessibilityLabel={`Remove ${bookmark.title}`}
                   hitSlop={12}
                 >
-                  <Text style={styles.icon}>🔖</Text>
+                  <BookmarkIcon filled />
                 </Pressable>
               </View>
             </Card>
@@ -69,11 +71,10 @@ export function BookmarkedScreen({ navigation }: JournalScreenProps<"Bookmarked"
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.sm },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.sm },
   row: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
   text: { flex: 1, gap: spacing.xs },
   title: { ...typography.label, color: colors.ink },
   note: { ...typography.caption, color: colors.inkSoft, lineHeight: 18 },
-  icon: { fontSize: 20 },
   empty: { ...typography.body, color: colors.inkSoft, lineHeight: 21 },
 });

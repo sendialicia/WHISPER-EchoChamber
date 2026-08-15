@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card } from "../ui/Card";
 import { GhostButton } from "../ui/Button";
 import { API_BASE_URL } from "../api/client";
@@ -35,7 +36,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps<"Settings">) 
   }, []);
 
   return (
-    <Screen>
+    <Screen backdrop="home">
       <ScreenHeader title="Settings" />
 
       <ScrollView
@@ -98,7 +99,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.md },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.md },
   body: { ...typography.body, color: colors.inkSoft, lineHeight: 21 },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   rowLabel: { ...typography.label, color: colors.ink },

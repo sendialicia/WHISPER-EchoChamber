@@ -1,16 +1,18 @@
 import { useCallback, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Screen } from "../ui/Screen";
+import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card, FeatureCard } from "../ui/Card";
 import { GhostButton, OnDarkButton } from "../ui/Button";
+import { Flame } from "../ui/Icons";
 import { getPracticeTopic } from "../api/practice";
 import { ApiError } from "../api/client";
 import { isAuthConfigured } from "../auth/identity";
 import { getStreak, type Streak } from "../storage/local";
 import type { PracticeTopic } from "../api/types";
 import type { PracticeScreenProps } from "../navigation/types";
-import { colors, spacing, typography } from "../theme";
+import { colors, radius, spacing, typography } from "../theme";
 
 /** Feature 4 — the practice hub. */
 export function PracticeHomeScreen({ navigation }: PracticeScreenProps<"PracticeHome">) {
@@ -46,14 +48,15 @@ export function PracticeHomeScreen({ navigation }: PracticeScreenProps<"Practice
   );
 
   return (
-    <Screen>
+    <Screen backdrop="practice">
+      <ScreenHeader title="Practice" centered />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         <View style={styles.streak}>
-          <Text style={styles.flame}>🔥</Text>
+          <Flame size={72} />
           <Text style={styles.streakCount}>{streak.count}</Text>
           <Text style={styles.streakLabel}>
             {streak.count === 1 ? "Day Streak!" : "Days Streak!"}
@@ -64,9 +67,14 @@ export function PracticeHomeScreen({ navigation }: PracticeScreenProps<"Practice
 
         {topic ? (
           <FeatureCard>
-            <Text style={styles.cardDate}>{new Date().toLocaleDateString()}</Text>
+            <View style={styles.cardTop}>
+              <View style={styles.thumb} />
+              <View style={styles.datePill}>
+                <Text style={styles.dateText}>{new Date().toLocaleDateString()}</Text>
+              </View>
+            </View>
             <Text style={styles.cardKind}>Perspective</Text>
-            <Text style={styles.cardTopic}>{topic.topic}</Text>
+            <Text style={styles.cardTopic}>{formatTopic(topic.topic)}</Text>
             <OnDarkButton
               label="Play"
               onPress={() =>
@@ -106,13 +114,26 @@ export function PracticeHomeScreen({ navigation }: PracticeScreenProps<"Practice
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.md },
-  streak: { alignItems: "center", gap: spacing.xs, paddingVertical: spacing.lg },
-  flame: { fontSize: 40 },
-  streakCount: { fontSize: 48, fontWeight: "700", color: colors.ink },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.md },
+  streak: { alignItems: "center", gap: spacing.xs, paddingVertical: spacing.md },
+  streakCount: { ...typography.hero, fontSize: 52, color: colors.ink },
   streakLabel: { ...typography.label, color: colors.inkSoft },
-  sectionTitle: { ...typography.heading, color: colors.ink, marginTop: spacing.sm },
-  cardDate: { ...typography.caption, color: colors.onDarkSoft, alignSelf: "flex-end" },
+  sectionTitle: { ...typography.title, color: colors.ink, marginTop: spacing.sm },
+  cardTop: { flexDirection: "row", alignItems: "flex-start" },
+  thumb: {
+    width: 118,
+    height: 118,
+    borderRadius: radius.md,
+    backgroundColor: colors.lavender,
+  },
+  datePill: {
+    marginLeft: "auto",
+    backgroundColor: colors.deepPressed,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
+  dateText: { ...typography.caption, color: colors.onDark },
   cardKind: { ...typography.caption, color: colors.onDarkSoft },
   cardTopic: { ...typography.title, color: colors.onDark },
   exerciseBlurb: { ...typography.body, color: colors.inkSoft, lineHeight: 21 },
@@ -125,3 +146,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
+
+/** "remote_work" reads as a slug; the card wants it as a title. */
+function formatTopic(topic: string): string {
+  return topic
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}

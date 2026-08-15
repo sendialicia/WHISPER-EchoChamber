@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card, CardSection, OppositeCard } from "../ui/Card";
 import { GhostButton, PrimaryButton } from "../ui/Button";
 import { Pill } from "../ui/Pill";
@@ -146,7 +147,7 @@ export function ScanScreen({ navigation }: HomeScreenProps<"Scan">) {
     phase.kind === "preparing" || phase.kind === "triaging" || phase.kind === "analyzing";
 
   return (
-    <Screen>
+    <Screen backdrop="home">
       <ScreenHeader title="Scan" onBack={() => navigation.goBack()} />
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -292,7 +293,7 @@ function ResultCard({ result, onDone }: { result: AnalyzeResult; onDone: () => v
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.lg },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.lg },
   subtitle: { ...typography.body, color: colors.inkSoft },
   form: { gap: spacing.md },
   centered: { gap: spacing.md, paddingVertical: spacing.xl },

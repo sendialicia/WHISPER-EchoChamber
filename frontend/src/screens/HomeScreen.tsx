@@ -1,10 +1,12 @@
 import { useCallback, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Screen } from "../ui/Screen";
 import { Card, FeatureCard } from "../ui/Card";
-import { OnDarkButton, PrimaryButton } from "../ui/Button";
+import { LinkButton, OnDarkButton, PrimaryButton } from "../ui/Button";
+import { SectionHeading } from "../ui/Progress";
 import { Meter } from "../ui/Meter";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { getEchoChamberMeter } from "../api/dashboard";
 import { ApiError } from "../api/client";
 import { isAuthConfigured } from "../auth/identity";
@@ -17,6 +19,7 @@ import { colors, spacing, typography } from "../theme";
 export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
   const [meter, setMeter] = useState<EchoChamberMeterResult | null>(null);
   const [history, setHistory] = useState<ScanRecord[]>([]);
+  const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -47,8 +50,10 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
     }, [load])
   );
 
+  const shown = showAll ? history : history.slice(0, 3);
+
   return (
-    <Screen>
+    <Screen backdrop="home">
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -64,7 +69,7 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
                 score={meter.skewScore}
                 caption={
                   meter.dominantSide
-                    ? `Mostly one perspective on ${meter.topicsCovered} topic${meter.topicsCovered === 1 ? "" : "s"} — leaning ${meter.dominantSide}.`
+                    ? `You have been seeing one perspective across ${meter.topicsCovered} topic${meter.topicsCovered === 1 ? "" : "s"}.`
                     : `Across ${meter.topicsCovered} topic${meter.topicsCovered === 1 ? "" : "s"} you've scanned.`
                 }
               />
@@ -83,7 +88,17 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
         <PrimaryButton label="Scan something" onPress={() => navigation.navigate("Scan")} />
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Scan History</Text>
+          <SectionHeading
+            title="Quick Scan History"
+            trailing={
+              history.length > 3 ? (
+                <LinkButton
+                  label={showAll ? "Show less" : "View All"}
+                  onPress={() => setShowAll((v) => !v)}
+                />
+              ) : undefined
+            }
+          />
 
           {history.length === 0 ? (
             <Card>
@@ -93,20 +108,18 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
               </Text>
             </Card>
           ) : (
-            history.slice(0, 5).map((scan) => (
-              <Pressable key={scan.id} accessibilityRole="button">
-                <Card>
-                  <Text style={styles.scanExcerpt} numberOfLines={2}>
-                    {scan.excerpt}
-                  </Text>
-                  <Text style={styles.scanMeta}>
-                    {scan.mode === "fact_context" ? "Fact context" : "Two sides"}
-                    {scan.tactic ? ` · ${scan.tactic.replace(/_/g, " ")}` : ""}
-                    {" · "}
-                    {new Date(scan.scannedAt).toLocaleDateString()}
-                  </Text>
-                </Card>
-              </Pressable>
+            shown.map((scan) => (
+              <Card key={scan.id}>
+                <Text style={styles.scanExcerpt} numberOfLines={2}>
+                  {scan.excerpt}
+                </Text>
+                <Text style={styles.scanMeta}>
+                  {scan.mode === "fact_context" ? "Fact context" : "Two sides"}
+                  {scan.tactic ? ` · ${scan.tactic.replace(/_/g, " ")}` : ""}
+                  {" · "}
+                  {new Date(scan.scannedAt).toLocaleDateString()}
+                </Text>
+              </Card>
             ))
           )}
         </View>
@@ -116,17 +129,17 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.lg },
-  greeting: { ...typography.display, color: colors.ink },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.md },
+  greeting: { ...typography.display, color: colors.ink, marginBottom: spacing.xs },
   cardTitle: { ...typography.heading, color: colors.onDark, textAlign: "center" },
   cardEmpty: {
     ...typography.body,
     color: colors.onDarkSoft,
     textAlign: "center",
     lineHeight: 21,
+    paddingVertical: spacing.lg,
   },
-  section: { gap: spacing.sm },
-  sectionTitle: { ...typography.heading, color: colors.ink },
+  section: { gap: spacing.sm, marginTop: spacing.sm },
   empty: { ...typography.body, color: colors.inkSoft, lineHeight: 21 },
   scanExcerpt: { ...typography.body, color: colors.ink },
   scanMeta: { ...typography.caption, color: colors.inkFaint },

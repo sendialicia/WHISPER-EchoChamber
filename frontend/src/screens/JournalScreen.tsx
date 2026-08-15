@@ -10,7 +10,10 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { Screen, ScreenHeader } from "../ui/Screen";
+import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { Card } from "../ui/Card";
+import { Bookmark as BookmarkIcon } from "../ui/Icons";
+import { SectionHeading } from "../ui/Progress";
 import { getReflectionJournal, getSourceDiversity } from "../api/dashboard";
 import { ApiError } from "../api/client";
 import { isAuthConfigured } from "../auth/identity";
@@ -75,7 +78,7 @@ export function JournalScreen({ navigation }: JournalScreenProps<"JournalMain">)
   );
 
   return (
-    <Screen>
+    <Screen backdrop="journal">
       <ScreenHeader
         title="Journal & Explore"
         trailing={
@@ -85,7 +88,7 @@ export function JournalScreen({ navigation }: JournalScreenProps<"JournalMain">)
             accessibilityLabel="Bookmarked readings"
             hitSlop={12}
           >
-            <Text style={styles.bookmarkIcon}>🔖</Text>
+            <BookmarkIcon size={24} />
           </Pressable>
         }
       />
@@ -96,10 +99,10 @@ export function JournalScreen({ navigation }: JournalScreenProps<"JournalMain">)
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Emotional History</Text>
-          <Text style={styles.sectionCaption}>
-            These topics might trigger your emotion.
-          </Text>
+          <SectionHeading
+            title="Emotional History"
+            caption="These topics might trigger your emotion!"
+          />
 
           {entries.length === 0 ? (
             <Card>
@@ -134,10 +137,10 @@ export function JournalScreen({ navigation }: JournalScreenProps<"JournalMain">)
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Source Diversity Nudge</Text>
-          <Text style={styles.sectionCaption}>
-            Recommended readings from different perspectives.
-          </Text>
+          <SectionHeading
+            title="Source Diversity Nudge"
+            caption="Recommend readings from different perspectives!"
+          />
 
           {nudges.length === 0 ? (
             <Card>
@@ -149,6 +152,7 @@ export function JournalScreen({ navigation }: JournalScreenProps<"JournalMain">)
             nudges.map((nudge) => (
               <Card key={nudge.suggestedReadingUrl}>
                 <View style={styles.nudgeRow}>
+                  <View style={styles.nudgeThumb} />
                   <View style={styles.nudgeText}>
                     <Text style={styles.nudgeTitle}>{nudge.suggestedReadingTitle}</Text>
                     <Text style={styles.nudgeReason} numberOfLines={2}>
@@ -165,9 +169,7 @@ export function JournalScreen({ navigation }: JournalScreenProps<"JournalMain">)
                     }
                     hitSlop={12}
                   >
-                    <Text style={styles.bookmarkIcon}>
-                      {isBookmarked(nudge.suggestedReadingUrl) ? "🔖" : "📑"}
-                    </Text>
+                    <BookmarkIcon filled={isBookmarked(nudge.suggestedReadingUrl)} />
                   </Pressable>
                 </View>
               </Card>
@@ -180,24 +182,27 @@ export function JournalScreen({ navigation }: JournalScreenProps<"JournalMain">)
 }
 
 const styles = StyleSheet.create({
-  scroll: { paddingBottom: spacing.xxl, gap: spacing.lg },
+  scroll: { paddingBottom: TAB_BAR_CLEARANCE, gap: spacing.lg },
   section: { gap: spacing.sm },
-  sectionTitle: { ...typography.heading, color: colors.ink },
-  sectionCaption: { ...typography.caption, color: colors.inkSoft },
+  nudgeThumb: {
+    width: 58,
+    height: 58,
+    borderRadius: radius.sm,
+    backgroundColor: colors.deep,
+  },
   chips: { gap: spacing.sm, paddingVertical: spacing.xs },
   chip: {
-    width: 130,
-    height: 110,
+    width: 122,
+    height: 104,
     borderRadius: radius.md,
     padding: spacing.md,
     justifyContent: "space-between",
   },
   chipTopic: { ...typography.label, color: colors.onDark },
   chipMeta: { ...typography.caption, color: colors.onDarkSoft },
-  nudgeRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
+  nudgeRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   nudgeText: { flex: 1, gap: spacing.xs },
-  nudgeTitle: { ...typography.label, color: colors.ink },
+  nudgeTitle: { ...typography.heading, color: colors.ink },
   nudgeReason: { ...typography.caption, color: colors.inkSoft, lineHeight: 18 },
-  bookmarkIcon: { fontSize: 20 },
   empty: { ...typography.body, color: colors.inkSoft, lineHeight: 21 },
 });
