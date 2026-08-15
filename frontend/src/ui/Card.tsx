@@ -73,8 +73,8 @@ export function StackedFeatureCard({
 }) {
   return (
     <View style={styles.deck}>
-      <Image source={cardArt.stackBack} style={styles.stackBack} resizeMode="stretch" />
-      <Image source={cardArt.stackMid} style={styles.stackMid} resizeMode="stretch" />
+      <Image source={cardArt.stackBack} style={styles.stackBack} resizeMode="contain" />
+      <Image source={cardArt.stackMid} style={styles.stackMid} resizeMode="contain" />
 
       <View style={[styles.feature, styles.deckFront, style]}>
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -144,6 +144,9 @@ export function CardSection({
   );
 }
 
+/** How far each card in the deck peeks out above the one in front of it. */
+const PEEK = 12;
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
@@ -154,22 +157,26 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     ...elevation,
   },
-  deck: { paddingTop: 26 },
+  // The stack images are near-square with their own rounded corners, so they
+  // keep their aspect ratio and are simply overlapped by the front card.
+  // Forcing them into a short strip stretched those corners into a hard edge.
+  deck: { paddingTop: PEEK * 2 },
   deckFront: { marginTop: 0 },
   stackBack: {
     position: "absolute",
     top: 0,
-    left: "9%",
-    right: "9%",
-    height: 90,
-    opacity: 0.75,
+    left: "10%",
+    right: "10%",
+    aspectRatio: 311 / 293,
+    opacity: 0.55,
   },
   stackMid: {
     position: "absolute",
-    top: 13,
-    left: "4%",
-    right: "4%",
-    height: 90,
+    top: PEEK,
+    left: "5%",
+    right: "5%",
+    aspectRatio: 346 / 325,
+    opacity: 0.8,
   },
   ringLarge: {
     position: "absolute",

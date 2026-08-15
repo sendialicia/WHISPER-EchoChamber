@@ -15,28 +15,34 @@ import { backdrop, colors, spacing, typography } from "../theme";
  */
 export type Backdrop = "home" | "journal" | "analysis" | "practice";
 
+/**
+ * Only the three Ellipse exports are used here. The other two glows have an
+ * opaque near-white centre — they were drawn to sit behind a whole screen, and
+ * floating one over this ground renders its centre as a hard pale disc rather
+ * than a glow.
+ */
 const LAYOUTS: Record<
   Backdrop,
-  { source: number; style: object }[]
+  { source: number; style: object; opacity?: number }[]
 > = {
   home: [
-    { source: backdrop.blue, style: { top: -80, right: -140, width: 380, height: 380 } },
-    { source: backdrop.cyan, style: { top: 40, right: -60, width: 220, height: 220 } },
-    { source: backdrop.crescent, style: { bottom: 40, left: -160, width: 420, height: 380 } },
+    { source: backdrop.cyan, style: { top: -90, right: -90, width: 300, height: 300 } },
+    { source: backdrop.magenta, style: { top: 180, left: -140, width: 300, height: 300 }, opacity: 0.5 },
+    { source: backdrop.cyan, style: { bottom: 60, right: -130, width: 320, height: 320 }, opacity: 0.6 },
   ],
   journal: [
-    { source: backdrop.yellow, style: { top: -70, right: -70, width: 260, height: 260 } },
-    { source: backdrop.blue, style: { top: 120, right: -120, width: 340, height: 340 } },
-    { source: backdrop.magenta, style: { bottom: 120, left: -130, width: 300, height: 300 } },
+    { source: backdrop.yellow, style: { top: -80, right: -70, width: 260, height: 260 }, opacity: 0.7 },
+    { source: backdrop.magenta, style: { top: 220, right: -140, width: 320, height: 320 }, opacity: 0.45 },
+    { source: backdrop.cyan, style: { bottom: 100, left: -140, width: 300, height: 300 }, opacity: 0.55 },
   ],
   analysis: [
-    { source: backdrop.cyan, style: { top: -60, left: -60, width: 280, height: 280 } },
-    { source: backdrop.yellow, style: { bottom: 140, right: -90, width: 300, height: 300 } },
-    { source: backdrop.blue, style: { bottom: -80, left: -100, width: 360, height: 360 } },
+    { source: backdrop.cyan, style: { top: -70, left: -80, width: 280, height: 280 }, opacity: 0.7 },
+    { source: backdrop.yellow, style: { bottom: 160, right: -110, width: 300, height: 300 }, opacity: 0.6 },
+    { source: backdrop.magenta, style: { bottom: -90, left: -110, width: 320, height: 320 }, opacity: 0.45 },
   ],
   practice: [
-    { source: backdrop.blue, style: { top: 60, left: -120, width: 420, height: 300 } },
-    { source: backdrop.cyan, style: { top: 100, right: -110, width: 280, height: 280 } },
+    { source: backdrop.cyan, style: { top: -40, right: -110, width: 300, height: 300 }, opacity: 0.7 },
+    { source: backdrop.magenta, style: { top: 120, left: -150, width: 300, height: 300 }, opacity: 0.4 },
   ],
 };
 
@@ -56,7 +62,7 @@ export function Screen({
           <Image
             key={i}
             source={glow.source}
-            style={[styles.glow, glow.style]}
+            style={[styles.glow, glow.style, { opacity: glow.opacity ?? 0.8 }]}
             resizeMode="contain"
           />
         ))}

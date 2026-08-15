@@ -20,12 +20,14 @@ export function Flame({ size = 64 }: { size?: number }) {
           <Stop offset="1" stopColor={colors.cyan} />
         </LinearGradient>
       </Defs>
+      {/* Body: a wide base tapering to a leaning tip, with a curl at the
+          shoulder. A single symmetrical curve just reads as a teardrop. */}
       <Path
-        d="M33 3c1 9-4 13-9 18S14 32 15 41c1 10 9 20 19 20s18-9 19-19c1-11-6-16-11-22-4-5-7-11-9-17z"
+        d="M34 3c-1 8-5 13-11 18-7 6-12 12-12 21 0 12 10 21 22 21s22-9 22-21c0-7-3-12-8-17-1 4-3 6-6 7 2-11-2-21-7-29z"
         fill="url(#flameOuter)"
       />
       <Path
-        d="M32 30c1 5-2 7-4 10s-2 8 1 11 8 2 10-2c2-5-1-8-3-11s-4-5-4-8z"
+        d="M33 28c-1 6-4 9-7 13s-4 8-1 12 11 4 14-1c3-6 0-10-2-14s-4-6-4-10z"
         fill="url(#flameInner)"
       />
     </Svg>
