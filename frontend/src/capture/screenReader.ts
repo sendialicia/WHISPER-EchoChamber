@@ -12,9 +12,35 @@ import type { ScanContent } from "../api/types";
  * Android-only by nature: no other platform lets an app read or capture
  * another app's screen. Everything here answers "unavailable" elsewhere so the
  * UI can hide the feature in one place rather than guarding every call.
+ *
+ * Calls also go through `native`/`nativeAsync`, which check the function
+ * exists first. In a dev build the JS reloads instantly while the native side
+ * stays frozen in the installed APK, so any function added since the last
+ * build is simply missing — and calling it blows up the whole screen with
+ * "undefined is not a function" rather than pointing at the real problem.
+ * Degrading instead keeps the app usable and makes the cause obvious.
  */
 
 export const SCREEN_CAPTURE_SUPPORTED = Platform.OS === "android";
+
+type NativeApi = typeof EchoOverlay;
+
+function native<K extends keyof NativeApi, T>(
+  name: K,
+  call: (api: NativeApi) => T,
+  fallback: T
+): T {
+  if (!SCREEN_CAPTURE_SUPPORTED) return fallback;
+
+  if (typeof (EchoOverlay as unknown as Record<string, unknown>)[name as string] !== "function") {
+    console.warn(
+      `[screenReader] EchoOverlay.${String(name)} is missing from the installed build — rebuild the app to pick it up.`
+    );
+    return fallback;
+  }
+
+  return call(EchoOverlay);
+}
 
 const UNAVAILABLE: EchoOverlayPermissions = {
   accessibilityEnabled: false,
@@ -26,17 +52,38 @@ export function getPermissions(): EchoOverlayPermissions {
   if (!SCREEN_CAPTURE_SUPPORTED) return UNAVAILABLE;
 
   return {
-    accessibilityEnabled: EchoOverlay.isAccessibilityEnabled(),
-    accessibilityConnected: EchoOverlay.isAccessibilityConnected(),
-    canDrawOverlay: EchoOverlay.canDrawOverlay(),
+    accessibilityEnabled: native("isAccessibilityEnabled", (a) => a.isAccessibilityEnabled(), false),
+    accessibilityConnected: native("isAccessibilityConnected", (a) => a.isAccessibilityConnected(), false),
+    canDrawOverlay: native("canDrawOverlay", (a) => a.canDrawOverlay(), false),
   };
 }
 
-export const openAccessibilitySettings = () => EchoOverlay.openAccessibilitySettings();
-export const showFloatingButton = () => EchoOverlay.showButton();
-export const hideFloatingButton = () => EchoOverlay.hideButton();
+// ----------------------------------------------------------------- settings
+
+export const openAccessibilitySettings = () =>
+  native("openAccessibilitySettings", (a) => a.openAccessibilitySettings(), Promise.resolve());
+
+/** App info page — where Android 13+ hides "Allow restricted settings". */
+export const openAppInfo = () =>
+  native("openAppInfo", (a) => a.openAppInfo(), Promise.resolve());
+
+export const requestOverlayPermission = () =>
+  native("requestOverlayPermission", (a) => a.requestOverlayPermission(), Promise.resolve());
+
+// ------------------------------------------------------------------- button
+
+export const showFloatingButton = () =>
+  native("showButton", (a) => a.showButton(), Promise.resolve(false));
+
+export const hideFloatingButton = () =>
+  native("hideButton", (a) => a.hideButton(), Promise.resolve());
+
 export const isFloatingButtonShowing = () =>
-  SCREEN_CAPTURE_SUPPORTED && EchoOverlay.isButtonShowing();
+  native("isButtonShowing", (a) => a.isButtonShowing(), false);
+
+/** True when the button needed no draw-over-other-apps grant. */
+export const buttonUsesAccessibilityOverlay = () =>
+  native("buttonUsesAccessibilityOverlay", (a) => a.buttonUsesAccessibilityOverlay(), false);
 
 /**
  * Fires when the floating button is tapped. The read has already happened by
@@ -44,18 +91,23 @@ export const isFloatingButtonShowing = () =>
  */
 export function onScanRequested(handler: () => void): () => void {
   if (!SCREEN_CAPTURE_SUPPORTED) return () => {};
-  const sub = EchoOverlay.addListener("onScanRequested", handler);
-  return () => sub.remove();
+
+  try {
+    const sub = EchoOverlay.addListener("onScanRequested", handler);
+    return () => sub.remove();
+  } catch {
+    // The event doesn't exist in an older build; nothing to unsubscribe.
+    return () => {};
+  }
 }
+
+// ------------------------------------------------------------------ reading
 
 /** What the last button tap read, or null. Taking it clears it. */
 export async function takePendingScan(): Promise<ScanContent | null> {
-  if (!SCREEN_CAPTURE_SUPPORTED) return null;
-  const pending = await EchoOverlay.takePendingScan();
+  const pending = await native("takePendingScan", (a) => a.takePendingScan(), Promise.resolve(null));
   return pending ? toScanContent(pending) : null;
 }
-export const openAppInfo = () => EchoOverlay.openAppInfo();
-export const requestOverlayPermission = () => EchoOverlay.requestOverlayPermission();
 
 /**
  * Reads the foreground app, text first.
@@ -66,12 +118,10 @@ export const requestOverlayPermission = () => EchoOverlay.requestOverlayPermissi
  * text at all.
  */
 export async function readScreen(): Promise<ScreenReadResult> {
-  if (!SCREEN_CAPTURE_SUPPORTED) return { text: null, imageBase64: null };
-
-  const text = await EchoOverlay.readScreenText();
+  const text = await native("readScreenText", (a) => a.readScreenText(), Promise.resolve(null));
   if (text) return { text, imageBase64: null };
 
-  const imageBase64 = await EchoOverlay.captureScreen();
+  const imageBase64 = await native("captureScreen", (a) => a.captureScreen(), Promise.resolve(null));
   return { text: null, imageBase64 };
 }
 

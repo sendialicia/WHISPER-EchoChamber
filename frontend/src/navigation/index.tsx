@@ -98,7 +98,7 @@ const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 function SettingsNavigator() {
   return (
     <SettingsStack.Navigator screenOptions={stackOptions}>
-      <SettingsStack.Screen name="Settings" component={SettingsScreen} />
+      <SettingsStack.Screen name="SettingsMain" component={SettingsScreen} />
       <SettingsStack.Screen name="Permissions" component={PermissionsScreen} />
       <SettingsStack.Screen name="ToneTester" component={ToneScreen} />
     </SettingsStack.Navigator>

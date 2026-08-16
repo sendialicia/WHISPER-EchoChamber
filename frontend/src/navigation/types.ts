@@ -29,7 +29,7 @@ export type PracticeStackParamList = {
 };
 
 export type SettingsStackParamList = {
-  Settings: undefined;
+  SettingsMain: undefined;
   Permissions: undefined;
   ToneTester: undefined;
 };

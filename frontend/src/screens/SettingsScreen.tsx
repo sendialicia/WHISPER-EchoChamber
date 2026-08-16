@@ -17,7 +17,7 @@ import type { SettingsScreenProps } from "../navigation/types";
 import { colors, spacing, typography } from "../theme";
 
 /** Privacy, connection state, and the surfaces that only exist for testing. */
-export function SettingsScreen({ navigation }: SettingsScreenProps<"Settings">) {
+export function SettingsScreen({ navigation }: SettingsScreenProps<"SettingsMain">) {
   const [userId, setUserId] = useState<string | null>(null);
   const [name, setNameValue] = useState("");
 
