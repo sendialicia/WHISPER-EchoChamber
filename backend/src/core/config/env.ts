@@ -8,6 +8,11 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_FAST_MODEL: z.string().default("gemini-2.5-flash-lite"),
   GEMINI_DEEP_MODEL: z.string().default("gemini-2.5-flash"),
+  // Used only when the primary answers 503 for long enough to exhaust its
+  // retries. Deliberately a different model, since demand spikes hit one at
+  // a time — pointing this at the primary just repeats the same failure.
+  GEMINI_FAST_FALLBACK_MODEL: z.string().default("gemini-2.5-flash-lite"),
+  GEMINI_DEEP_FALLBACK_MODEL: z.string().default("gemini-2.5-flash"),
   LLM_PROVIDER: z.string().default("gemini"),
 
   DATABASE_URL: z.string().optional(),

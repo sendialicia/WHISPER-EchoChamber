@@ -1,4 +1,6 @@
 import { env } from "@core/config/env";
+import { logger } from "@core/utils/logger";
+import { LlmUnavailableError, isRetryableStatus } from "../llmErrors";
 import type { LlmGenerateOptions } from "../llmClient";
 
 interface ProviderResult {
@@ -16,6 +18,11 @@ type GeminiPart =
  * Thin wrapper around Gemini's generateContent endpoint.
  * "fast" -> Flash-Lite (triage, tone check — high volume, low latency)
  * "deep" -> Flash/Pro (full analysis, steelmanning — needs stronger reasoning)
+ *
+ * Overload is retried, then the request is tried once against a second model.
+ * Gemini answers 503 whenever a model is briefly in heavy demand, and without
+ * this a spike lasting seconds takes the whole feature down — the user just
+ * sees the analysis fail with nothing to do about it.
  */
 export async function generateWithGemini(
   options: LlmGenerateOptions
@@ -24,9 +31,57 @@ export async function generateWithGemini(
     throw new Error("GEMINI_API_KEY is not set. Add it to your .env file.");
   }
 
-  const model =
+  const primary =
     options.speed === "deep" ? env.GEMINI_DEEP_MODEL : env.GEMINI_FAST_MODEL;
+  const fallback =
+    options.speed === "deep" ? env.GEMINI_DEEP_FALLBACK_MODEL : env.GEMINI_FAST_FALLBACK_MODEL;
 
+  try {
+    return await callWithRetries(primary, options);
+  } catch (err) {
+    if (!(err instanceof LlmUnavailableError) || fallback === primary) throw err;
+
+    // Demand spikes hit one model at a time, so a different one is usually
+    // answering fine — worth a single try before giving up on the request.
+    logger.warn(`${primary} unavailable, retrying once on ${fallback}`);
+    return callWithRetries(fallback, options, MAX_ATTEMPTS_FALLBACK);
+  }
+}
+
+/** Attempts against one model, backing off between transient failures. */
+async function callWithRetries(
+  model: string,
+  options: LlmGenerateOptions,
+  maxAttempts = MAX_ATTEMPTS
+): Promise<ProviderResult> {
+  let lastStatus = 0;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const result = await callGemini(model, options);
+    if ("text" in result) return result;
+
+    lastStatus = result.status;
+    if (!isRetryableStatus(result.status)) {
+      throw new Error(`Gemini API error (${result.status}): ${result.body}`);
+    }
+
+    if (attempt < maxAttempts) {
+      const wait = BASE_BACKOFF_MS * 2 ** (attempt - 1);
+      logger.warn(
+        `${model} returned ${result.status}, retrying in ${wait}ms (attempt ${attempt}/${maxAttempts})`
+      );
+      await delay(wait);
+    }
+  }
+
+  throw new LlmUnavailableError(lastStatus);
+}
+
+/** One call. Returns the result, or the status and body when it failed. */
+async function callGemini(
+  model: string,
+  options: LlmGenerateOptions
+): Promise<ProviderResult | { status: number; body: string }> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
 
   const parts: GeminiPart[] = [];
@@ -62,8 +117,7 @@ export async function generateWithGemini(
   });
 
   if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Gemini API error (${res.status}): ${errText}`);
+    return { status: res.status, body: await res.text() };
   }
 
   const data = (await res.json()) as any;
@@ -72,3 +126,11 @@ export async function generateWithGemini(
 
   return { text, model };
 }
+
+/** Two retries on the same model is enough for a spike measured in seconds. */
+const MAX_ATTEMPTS = 3;
+/** The fallback gets one attempt — by then the user has waited long enough. */
+const MAX_ATTEMPTS_FALLBACK = 1;
+const BASE_BACKOFF_MS = 600;
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
