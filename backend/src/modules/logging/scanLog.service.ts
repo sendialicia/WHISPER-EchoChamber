@@ -1,52 +1,66 @@
-import { db } from "@db/client";
+import { pgPool } from "@db/postgresClient";
 import type { ScanLogEntry } from "@db/models/scanLog.model";
 
 /**
- * Feature 1, Stage 7 — opt-in scan logging, now backed by real local
- * SQLite (see db/client.ts). This is what powers the Echo Chamber Meter,
- * Reflection Journal, and Practice's topic bank.
+ * Feature 1, Stage 7 — opt-in scan logging, in Postgres alongside everything
+ * else. This is the only input to the Echo Chamber Meter, the Reflection
+ * Journal, and the source-diversity nudges.
  *
- * NOTE: for a real on-device-first mobile app, this table would live on
- * the client (SQLite in React Native) rather than a backend server file —
- * this backend-side version is a solid stand-in for development and for
- * the future opt-in cloud sync path.
+ * It used to live in a SQLite file next to the server, which was fine on a
+ * laptop and wrong anywhere else: hosting platforms give a container an
+ * ephemeral disk, so every deploy would have silently reset each user's
+ * history back to zero.
  */
 
-const insertStmt = db.prepare(`
-  INSERT INTO scan_logs (id, userId, createdAt, sourceText, sourceUrl, mode, tactic, topic, sideShown)
-  VALUES (@id, @userId, @createdAt, @sourceText, @sourceUrl, @mode, @tactic, @topic, @sideShown)
-`);
+interface ScanLogRow {
+  id: string;
+  user_id: string;
+  created_at: Date;
+  source_text: string;
+  source_url: string | null;
+  mode: string;
+  tactic: string | null;
+  topic: string | null;
+  side_shown: string | null;
+}
 
-const selectByUserStmt = db.prepare(`
-  SELECT * FROM scan_logs WHERE userId = ? ORDER BY createdAt DESC
-`);
+function rowToEntry(row: ScanLogRow): ScanLogEntry {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    createdAt: row.created_at.toISOString(),
+    sourceText: row.source_text,
+    sourceUrl: row.source_url ?? undefined,
+    mode: row.mode as ScanLogEntry["mode"],
+    tactic: row.tactic,
+    topic: row.topic ?? undefined,
+    sideShown: (row.side_shown as ScanLogEntry["sideShown"]) ?? undefined,
+  };
+}
 
 export async function saveScanLog(entry: ScanLogEntry): Promise<void> {
-  insertStmt.run({
-    id: entry.id,
-    userId: entry.userId,
-    createdAt: entry.createdAt,
-    sourceText: entry.sourceText,
-    sourceUrl: entry.sourceUrl ?? null,
-    mode: entry.mode,
-    tactic: entry.tactic ?? null,
-    topic: entry.topic ?? null,
-    sideShown: entry.sideShown ?? null,
-  });
+  // id and created_at are left to their column defaults — the caller's values
+  // come from the client, and the database is the better clock and id source.
+  await pgPool.query(
+    `INSERT INTO scan_logs (user_id, source_text, source_url, mode, tactic, topic, side_shown)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      entry.userId,
+      entry.sourceText,
+      entry.sourceUrl ?? null,
+      entry.mode,
+      entry.tactic ?? null,
+      entry.topic ?? null,
+      entry.sideShown ?? null,
+    ]
+  );
 }
 
 export async function getScanLogsForUser(userId: string): Promise<ScanLogEntry[]> {
-  const rows = selectByUserStmt.all(userId) as any[];
+  const result = await pgPool.query<ScanLogRow>(
+    `SELECT * FROM scan_logs WHERE user_id = $1 ORDER BY created_at DESC`,
+    [userId]
+  );
 
-  return rows.map((row) => ({
-    id: row.id,
-    userId: row.userId,
-    createdAt: row.createdAt,
-    sourceText: row.sourceText,
-    sourceUrl: row.sourceUrl ?? undefined,
-    mode: row.mode,
-    tactic: row.tactic ?? null,
-    topic: row.topic ?? undefined,
-    sideShown: row.sideShown ?? undefined,
-  }));
+  return result.rows.map(rowToEntry);
 }

@@ -34,6 +34,19 @@ Server runs at `http://localhost:3000`. Check `GET /health` first.
 | `modules/practice/*` | Person B | Feature 4 — `compare.service.ts` uses the shared `llmClient` |
 | `core/config`, `core/middleware`, `db/*` | Person B | Infra/plumbing |
 
+## Data
+
+Everything is in Supabase Postgres — `scan_logs` (the only personal table),
+plus the curated `topics`, `exercises`, and `diverse_reads`. Row level
+security is on for all four with no policies, which blocks the PostgREST path
+entirely: the anon key ships inside the app, so without that anyone holding
+the APK could read every user's scan history straight from the REST endpoint.
+The backend connects as the owning role and bypasses RLS, and it is the only
+thing that should touch these tables.
+
+The practice streak, bookmarks, and display name never reach the server —
+they live in the app's own storage, which is what the app promises the user.
+
 ## Endpoints
 
 **Feature 1 — Scan**
@@ -71,7 +84,6 @@ Server runs at `http://localhost:3000`. Check `GET /health` first.
 
 ## Next steps (not yet implemented — TODOs in code)
 
-- Wire a real DB (`src/db/client.ts` is a stub) — Prisma or Drizzle both work well with the model shapes already defined in `db/models/`.
 - Populate `CURATED_TOPIC_BANK` (practice/topic.service.ts), `EXERCISE_BANK` (practice/exercise.service.ts), and `CURATED_DIVERSE_READS` (dashboard/sourceDiversity.service.ts).
 - Replace the in-memory rate limiter with a real one before production.
 - Set `SUPABASE_URL` — `core/middleware/auth.middleware.ts` verifies Supabase JWTs against the project's JWKS, and every authed route returns 500 without it.

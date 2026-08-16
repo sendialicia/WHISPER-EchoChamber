@@ -3,12 +3,16 @@ import { env } from "@core/config/env";
 import { logger } from "@core/utils/logger";
 
 /**
- * Postgres (Supabase) — for SHARED, centralized data that's the same for
- * every user: exercises, and later topics / diverse-reading suggestions.
+ * Postgres (Supabase) — the only database.
  *
- * Personal/per-user data (scan logs, journal) stays in local SQLite —
- * see db/client.ts — since that's what should stay on-device per the
- * app's privacy-first design.
+ * Both the shared content banks (exercises, topics, diverse reads) and the
+ * personal one (scan_logs) live here. Scan logs used to sit in a SQLite file
+ * beside the server, which worked on a laptop and would have quietly failed
+ * anywhere else: a hosting platform gives the container an ephemeral disk, so
+ * every deploy would have reset each user's history to zero.
+ *
+ * What genuinely stays on-device is a shorter list — the practice streak,
+ * bookmarks, and the display name — and none of it goes through here.
  *
  * Setup:
  * 1. Create a free project at https://supabase.com
@@ -28,8 +32,8 @@ pgPool.on("error", (err) => {
 });
 
 /**
- * Creates the `exercises` table if it doesn't exist yet. Call once on
- * server startup (see server.ts) or run manually via `npm run migrate`.
+ * Creates every table if it doesn't exist yet, and makes sure row level
+ * security is on. Called once on server startup — see server.ts.
  */
 export async function ensurePostgresSchema(): Promise<void> {
   if (!env.DATABASE_URL) {
@@ -75,12 +79,50 @@ export async function ensurePostgresSchema(): Promise<void> {
       );
 
       CREATE INDEX IF NOT EXISTS idx_diverse_reads_topic ON diverse_reads (topic);
+
+      -- Every scan a user opted to keep. This is the only table holding
+      -- personal data, and the sole input to the Echo Chamber Meter, the
+      -- Reflection Journal, and the source-diversity nudges.
+      CREATE TABLE IF NOT EXISTS scan_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        source_text TEXT NOT NULL,
+        source_url TEXT,
+        mode TEXT NOT NULL,
+        tactic TEXT,
+        topic TEXT,
+        side_shown TEXT
+      );
+
+      -- The dashboard always reads one user's rows newest-first.
+      CREATE INDEX IF NOT EXISTS idx_scan_logs_user_created
+        ON scan_logs (user_id, created_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_scan_logs_topic ON scan_logs (topic);
     `);
 
-    logger.info("Postgres schema ready (exercises, topics, diverse_reads tables).");
+    // Row level security on every table, with no policies attached.
+    //
+    // Supabase exposes public tables through PostgREST, and the anon key that
+    // reaches it is embedded in the app — so without this, anyone holding the
+    // APK could read every user's scan history straight from the REST
+    // endpoint. Enabling RLS with no policy denies that path outright. The
+    // backend is unaffected: it connects as the owning role, which bypasses
+    // RLS, and it is the only thing that should be touching these tables.
+    await pgPool.query(`
+      ALTER TABLE scan_logs ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE topics ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE exercises ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE diverse_reads ENABLE ROW LEVEL SECURITY;
+    `);
+
+    logger.info(
+      "Postgres schema ready (scan_logs, exercises, topics, diverse_reads; RLS on)."
+    );
   } catch (err) {
     // Don't crash the whole server if Postgres is unreachable or
-    // DATABASE_URL is malformed — Scan/Tone (Gemini + local SQLite) should
+    // DATABASE_URL is malformed — Scan and Tone are Gemini-only and should
     // keep working even if the Supabase-backed features can't.
     logger.error(
       "Failed to set up Postgres schema — exercise/topic/diverse-read endpoints will fail until DATABASE_URL is fixed.",

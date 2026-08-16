@@ -20,7 +20,7 @@ function rowToNudge(row: DiverseReadRow): SourceDiversityNudge {
 
 /**
  * Feature 3 — for topics that recur often in a user's history (local
- * scan_logs, SQLite), look up diverse-perspective reading suggestions
+ * scan_logs), look up diverse-perspective reading suggestions
  * from the shared `diverse_reads` table in Postgres/Supabase.
  */
 export async function getSourceDiversityNudges(userId: string): Promise<SourceDiversityNudge[]> {

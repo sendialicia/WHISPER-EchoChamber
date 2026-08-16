@@ -11,7 +11,7 @@ interface TopicRow {
 
 /**
  * Feature 4 — pulls a topic either from the user's own scan history
- * (preferred, more personally relevant, stays in local SQLite) or the
+ * (preferred, more personally relevant) or the
  * curated `topics` table in Postgres/Supabase as a fallback for users
  * with no scan history yet (e.g. brand new users).
  */
