@@ -33,8 +33,8 @@ export function SettingsScreen({ navigation }: SettingsScreenProps<"SettingsMain
 
   const confirmClear = useCallback(() => {
     Alert.alert(
-      "Clear local data?",
-      "Removes your streak, bookmarks, and scan history from this device. This can't be undone.",
+      "Clear on-device data?",
+      "Removes your practice streak and bookmarks from this device. Your scan history lives on your account and isn't affected. This can't be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -74,10 +74,14 @@ export function SettingsScreen({ navigation }: SettingsScreenProps<"SettingsMain
 
         <Card title="Your data">
           <Text style={styles.body}>
-            Your streak, bookmarks, and scan history stay on this device.
-            Nothing is uploaded unless you choose to sync a scan.
+            Your practice streak, bookmarks, and name stay on this device.
           </Text>
-          <GhostButton label="Clear local data" onPress={confirmClear} />
+          <Text style={styles.body}>
+            Scans are saved to your anonymous account instead, which is what
+            the meter, journal, and reading suggestions are built from. They
+            are not tied to your name or anything that identifies you.
+          </Text>
+          <GhostButton label="Clear on-device data" onPress={confirmClear} />
         </Card>
 
         <Card title="Connection">

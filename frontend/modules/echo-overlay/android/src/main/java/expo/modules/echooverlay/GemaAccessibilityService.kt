@@ -210,7 +210,7 @@ class GemaAccessibilityService : AccessibilityService() {
     val own = node.text?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
       ?: node.contentDescription?.toString()?.trim().takeUnless { it.isNullOrEmpty() }
 
-    if (own != null && into.none { it == own }) {
+    if (own != null && isContent(node, own) && into.none { it == own }) {
       into.add(own)
     }
 
@@ -219,6 +219,32 @@ class GemaAccessibilityService : AccessibilityService() {
       collectText(child, into, depth + 1)
       child?.recycle()
     }
+  }
+
+  /**
+   * Keeps writing, drops interface furniture.
+   *
+   * A tap reads the whole window, so on a feed the model would otherwise get
+   * tab labels, button captions and like counts mixed in with the posts, and
+   * has to guess which of it is the thing the user was annoyed by. Cutting the
+   * obvious chrome here is cheaper and more reliable than asking it to.
+   *
+   * The bias is deliberately toward keeping: losing part of a post is far
+   * worse than passing along a stray word.
+   */
+  private fun isContent(node: AccessibilityNodeInfo, text: String): Boolean {
+    // Controls carry their own label — "Post", "Follow", "Reply" — never prose.
+    val className = node.className?.toString().orEmpty()
+    if (CONTROL_CLASSES.any { className.endsWith(it) }) return false
+
+    // A short label on something tappable is a button or a tab. Real posts run
+    // longer than this, and the ones that don't are carried by their neighbours.
+    if (node.isClickable && text.length < SHORT_LABEL) return false
+
+    // Counts and timestamps: "1.2K", "3 jt", "12h", "5 min", "08/10/2026".
+    if (COUNT_OR_TIME.matches(text)) return false
+
+    return true
   }
 
   /**
@@ -307,6 +333,30 @@ class GemaAccessibilityService : AccessibilityService() {
 }
 
 private const val MIN_USEFUL_TEXT = 40
+
+/** Widget classes that only ever hold their own label, never prose. */
+private val CONTROL_CLASSES = listOf(
+  "Button",
+  "ImageButton",
+  "CheckBox",
+  "RadioButton",
+  "Switch",
+  "ToggleButton",
+  "Chip",
+  "TabView",
+)
+
+/** Below this, a tappable label is chrome rather than something to analyse. */
+private const val SHORT_LABEL = 25
+
+/**
+ * Engagement counts and timestamps in the formats social apps use, including
+ * the Indonesian abbreviations (rb = ribu, jt = juta) the target audience sees.
+ */
+private val COUNT_OR_TIME = Regex(
+  """^[\d.,]+\s*(rb|jt|k|m|b|%)?$|^\d+\s*(s|m|h|d|w|y|min|jam|hari|mgg|thn)$|^\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}$""",
+  RegexOption.IGNORE_CASE
+)
 private const val MAX_DEPTH = 40
 private const val MAX_NODES = 400
 private const val TARGET_WIDTH = 1080
