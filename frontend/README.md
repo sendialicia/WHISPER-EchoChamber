@@ -32,11 +32,12 @@ src/
   navigation/   five tabs, each with its own stack
   scan/         screenshot preparation (resize + compress before upload)
   screens/      see the tab map below
-  storage/      on-device streak, bookmarks, scan history
+  capture/      reading the screen through the native module
+  storage/      on-device streak, bookmarks, and display name
   ui/           shared components built from theme.ts
   theme.ts      every colour and spacing value in the app
 modules/
-  echo-overlay/   local native module (Kotlin, still a placeholder)
+  echo-overlay/   accessibility service + floating button (Kotlin)
 ```
 
 ### Tabs
@@ -101,10 +102,13 @@ blank page.
 
 ## What's local vs what's on the server
 
-Streak, bookmarks, and scan history live in AsyncStorage on the device —
-they have no backend endpoints, and keeping them local matches what the app
-tells the user ("All practice stays private on your device"). Everything
-else comes from the API.
+The practice streak, bookmarks, and the display name live in AsyncStorage on
+the device. They have no backend endpoints, and keeping them there is what the
+app tells the user.
+
+Everything else comes from the API, scan history included — it used to be
+mirrored locally too, and having both meant Home could list a scan the Echo
+Chamber Meter had never counted.
 
 ## Auth
 
@@ -122,12 +126,17 @@ they're unavailable instead of failing with a raw 401.
 
 ## Reading content off the screen
 
-Not built yet. The plan and the reasoning behind it are in
-[`../docs/capture-strategy.md`](../docs/capture-strategy.md) — read that
-before starting the native work. In short: **one AccessibilityService does
-both jobs.** `getRootInActiveWindow()` reads the text, and
-`takeScreenshot()` (API 30+) captures the screen when the text isn't
-exposed — silently, with no consent dialog. MediaProjection is not used.
+Built. One AccessibilityService does both jobs: `getRootInActiveWindow()`
+reads the text, and `takeScreenshot()` (API 30+) captures the screen when the
+text isn't exposed — silently, with no consent dialog. MediaProjection is not
+used. The reasoning is in
+[`../docs/capture-strategy.md`](../docs/capture-strategy.md).
+
+The floating button is hosted by that same service, so it stays alive while
+the user browses without a foreground service or its permanent notification.
+A tap reads the screen **before** opening the app: bringing GEMA forward first
+would make it the foreground window, and the read would return GEMA's own
+interface instead of the post being looked at.
 
 > **Expo Go can't run any of this.** It's a pre-built app with a fixed set
 > of modules, and an accessibility service needs its own `<service>` in the
@@ -153,11 +162,14 @@ npx tsc --noEmit && npx expo-doctor
 
 ## Native modules
 
-`modules/echo-overlay/` is scaffolded but still the generated placeholder
-(`hello`/`setValueAsync`). Nothing imports it yet. Local modules autolink
-from `modules/` once `npx expo prebuild` has generated the native projects.
+`modules/echo-overlay/` holds the accessibility service, the floating button,
+and the permission helpers behind them.
 
-Still to build, in order: permission onboarding (including the Android 13+
-restricted-settings flow, which every sideloaded install will hit), the
-accessibility service (text + screenshot), the overlay button, then the
-tone-check overlay that rewrites a draft in place with `ACTION_SET_TEXT`.
+Autolinking only finds a local module when the app declares
+`expo.autolinking.nativeModulesDir` in package.json. Without it the module is
+invisible to the build and every line of Kotlin compiles into nothing, failing
+silently at runtime.
+
+Still to build: the tone-check overlay, which reads a draft from another app's
+compose box and rewrites it in place with `ACTION_SET_TEXT`. The tone tester
+under Settings stands in for it today.
