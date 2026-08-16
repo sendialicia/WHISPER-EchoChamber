@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "seed": "tsx -r tsconfig-paths/register src/db/seed.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "migrate": "tsx -r tsconfig-paths/register src/db/migrate.ts"
   },
   "dependencies": {
     "cheerio": "^1.0.0",

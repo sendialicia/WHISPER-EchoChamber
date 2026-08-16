@@ -19,6 +19,15 @@ const envSchema = z.object({
   LLM_PROVIDER: z.string().default("gemini"),
 
   DATABASE_URL: z.string().optional(),
+  /**
+   * Apply the schema when the server starts. Handy locally; leave it off in
+   * production, where a cold start would repeat the DDL on every boot, and
+   * run `npm run migrate` after a schema change instead.
+   */
+  MIGRATE_ON_BOOT: z
+    .string()
+    .default("true")
+    .transform((v) => v !== "false"),
   JWT_SECRET: z.string().default("change_me"),
   SUPABASE_URL: z.string().optional(),
 });

@@ -88,19 +88,25 @@ Chamber Meter can never disagree about what has been scanned.
 
 ## Deploying
 
-Railway, with the **root directory set to `backend/`** — the repo holds the
-app alongside it, and Railway defaults to the repo root.
+Vercel, with the **root directory set to `backend/`** — the repo holds the app
+alongside it, and Vercel defaults to the repo root.
 
-`railway.json` covers the rest: build with `npm ci && npm run build`, start
-with `npm start`, and health-check `/health`.
+Vercel detects Express and needs no rewrites: it looks for the app at a few
+well-known paths, and `index.js` is one of them. That file loads the compiled
+`dist/`, not `src/`, because only `npm run build` (via `tsc-alias`) turns the
+`@core/*` aliases into imports plain Node can resolve.
 
-Set every variable listed in `.env.example` except `PORT`, which Railway
-injects itself.
+Set every variable from `.env.example` except `PORT`, which the platform
+provides, plus two changes for serverless:
 
-> `npm run build` runs `tsc-alias` after `tsc`. TypeScript emits the `@core/*`
-> style imports verbatim, so plain `node dist/server.js` cannot resolve them —
-> `tsconfig-paths` only maps them back to `src/`, which holds `.ts`. Dropping
-> that second step means the deploy builds cleanly and then crashes on boot.
+- `MIGRATE_ON_BOOT=false` — otherwise the DDL re-runs on every cold start.
+  Apply schema changes yourself with `npm run migrate`.
+- `DATABASE_URL` on **port 6543** (Supabase's transaction pooler), not 5432.
+  Each invocation opens its own pool, and the direct connection runs the
+  project out of connections once a few are alive at once.
+
+Then run `npm run migrate` locally once, so the tables exist before the first
+request arrives.
 
 Once it is up, point the app at it with `EXPO_PUBLIC_API_URL` in
 `frontend/.env` and build the `preview` profile — that APK runs without a dev
