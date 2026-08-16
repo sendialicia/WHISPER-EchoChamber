@@ -86,6 +86,16 @@ switched on. This is the one to share.
 npx eas-cli build --profile preview --platform android
 ```
 
+The `EXPO_PUBLIC_*` values live in `eas.json`, not `.env`. EAS uploads the
+project respecting `.gitignore`, and `.env` is ignored — so a build that
+relies on it silently produces an APK with no backend address, which then
+falls back to the emulator loopback and reaches nothing on a real phone.
+
+Committing them is safe: everything prefixed `EXPO_PUBLIC_` is compiled into
+the JavaScript bundle and readable by anyone holding the APK regardless. The
+Supabase key is the publishable one, and row level security is on with no
+policies, so it opens nothing on its own.
+
 ### Launch and motion
 
 `src/ui/Landing.tsx` is the launch animation: the mark inside a white disc

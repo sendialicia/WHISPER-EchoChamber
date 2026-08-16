@@ -1,3 +1,4 @@
+
 import { getScanLogsForUser } from "@modules/logging/scanLog.service";
 import type { ReflectionJournalEntry } from "./dashboard.types";
 
