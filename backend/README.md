@@ -96,8 +96,8 @@ well-known paths, and `index.js` is one of them. That file loads the compiled
 `dist/`, not `src/`, because only `npm run build` (via `tsc-alias`) turns the
 `@core/*` aliases into imports plain Node can resolve.
 
-Set every variable from `.env.example` except `PORT`, which the platform
-provides, plus two changes for serverless:
+Set every variable from `.env.example` except `PORT` and `NODE_ENV`, which the
+platform provides itself, plus two changes for serverless:
 
 - `MIGRATE_ON_BOOT=false` — otherwise the DDL re-runs on every cold start.
   Apply schema changes yourself with `npm run migrate`.

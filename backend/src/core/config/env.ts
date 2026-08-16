@@ -28,7 +28,6 @@ const envSchema = z.object({
     .string()
     .default("true")
     .transform((v) => v !== "false"),
-  JWT_SECRET: z.string().default("change_me"),
   SUPABASE_URL: z.string().optional(),
 });
 
