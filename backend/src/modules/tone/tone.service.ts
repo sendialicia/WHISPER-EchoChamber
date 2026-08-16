@@ -12,7 +12,7 @@ export async function checkTone(req: ToneCheckRequest): Promise<ToneCheckResult>
     prompt: buildTonePrompt(req.draft),
     speed: "fast",
     expectJson: true,
-    maxTokens: 256,
+    maxTokens: 2048,
   });
 
   const json = result.json as Partial<ToneCheckResult> | undefined;

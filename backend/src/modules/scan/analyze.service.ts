@@ -18,7 +18,7 @@ export async function runAnalysis(req: AnalyzeRequest): Promise<AnalyzeResult> {
     prompt: buildAnalyzePrompt(req.text, sourceContext),
     speed: "deep",
     expectJson: true,
-    maxTokens: 1024,
+    maxTokens: 4096,
     ...(req.imageBase64
       ? { image: { base64: req.imageBase64, mimeType: req.imageMimeType } }
       : {}),

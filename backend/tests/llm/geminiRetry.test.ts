@@ -15,7 +15,7 @@ beforeAll(async () => {
   // env.ts parses at import time, so these have to be in place first.
   process.env.GEMINI_API_KEY = "test-key";
   process.env.GEMINI_DEEP_MODEL = "primary-model";
-  process.env.GEMINI_DEEP_FALLBACK_MODEL = "fallback-model";
+  process.env.GEMINI_DEEP_FALLBACK_MODELS = "fallback-model,last-resort-model";
 
   ({ generateWithGemini } = await import("@core/llm/providers/gemini.provider"));
   ({ LlmUnavailableError } = await import("@core/llm/llmErrors"));
@@ -26,7 +26,27 @@ const ok = (text: string) =>
     status: 200,
   });
 
-const fail = (status: number) => new Response(`{"error":{"code":${status}}}`, { status });
+const fail = (status: number, body = `{"error":{"code":${status}}}`) =>
+  new Response(body, { status });
+
+/** A 429 shaped like Google's daily free-tier quota failure. */
+const outOfQuota = () =>
+  fail(
+    429,
+    JSON.stringify({
+      error: {
+        code: 429,
+        details: [
+          {
+            "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+            violations: [
+              { quotaId: "GenerateRequestsPerDayPerProjectPerModel-FreeTier" },
+            ],
+          },
+        ],
+      },
+    })
+  );
 
 /** Which model each call was aimed at, read back off the request URL. */
 function modelsCalled(fetchMock: ReturnType<typeof vi.fn>): string[] {
@@ -86,9 +106,8 @@ describe("gemini provider retries", () => {
     expect(modelsCalled(fetchMock)).toEqual(["primary-model", "primary-model"]);
   });
 
-  it("falls back to the second model once the primary is exhausted", async () => {
+  it("moves to the next model once the primary is exhausted", async () => {
     fetchMock
-      .mockResolvedValueOnce(fail(503))
       .mockResolvedValueOnce(fail(503))
       .mockResolvedValueOnce(fail(503))
       .mockResolvedValueOnce(ok("from fallback"));
@@ -97,12 +116,29 @@ describe("gemini provider retries", () => {
     expect(modelsCalled(fetchMock)).toEqual([
       "primary-model",
       "primary-model",
-      "primary-model",
       "fallback-model",
     ]);
   });
 
-  it("reports unavailable when the fallback is overloaded too", async () => {
+  it("walks the whole chain before giving up", async () => {
+    // The point of the chain: a spike on the newest model shouldn't end the
+    // request while an older one is answering normally.
+    fetchMock
+      .mockResolvedValueOnce(fail(503))
+      .mockResolvedValueOnce(fail(503))
+      .mockResolvedValueOnce(fail(503))
+      .mockResolvedValueOnce(ok("from the last one"));
+
+    await expect(run()).resolves.toMatchObject({ text: "from the last one" });
+    expect(modelsCalled(fetchMock)).toEqual([
+      "primary-model",
+      "primary-model",
+      "fallback-model",
+      "last-resort-model",
+    ]);
+  });
+
+  it("reports unavailable only when every model is overloaded", async () => {
     fetchMock.mockImplementation(async () => fail(503));
 
     await expect(run()).rejects.toBeInstanceOf(LlmUnavailableError);
@@ -115,6 +151,17 @@ describe("gemini provider retries", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("skips to the next model when the daily quota is gone", async () => {
+    // The free tier counts per model per day, so waiting cannot help but the
+    // next model still has its own budget.
+    fetchMock
+      .mockImplementationOnce(async () => outOfQuota())
+      .mockResolvedValueOnce(ok("from fallback"));
+
+    await expect(run()).resolves.toMatchObject({ text: "from fallback" });
+    expect(modelsCalled(fetchMock)).toEqual(["primary-model", "fallback-model"]);
+  });
+
   it("does not retry a bad request", async () => {
     // A 400 means the request itself is wrong. Repeating it just makes the
     // user wait longer for the same answer.
@@ -124,10 +171,27 @@ describe("gemini provider retries", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("does not retry an unknown model", async () => {
+  it("skips a model the key cannot reach and uses the next one", async () => {
+    // A 404 is a problem with that entry in the chain, not with the request.
+    // Ending the attempt there would let one stale model name in the config
+    // take down a feature the other models could have served.
+    fetchMock
+      .mockImplementationOnce(async () => fail(404))
+      .mockResolvedValueOnce(ok("from fallback"));
+
+    await expect(run()).resolves.toMatchObject({ text: "from fallback" });
+    expect(modelsCalled(fetchMock)).toEqual(["primary-model", "fallback-model"]);
+  });
+
+  it("gives up when no model in the chain is reachable", async () => {
     fetchMock.mockImplementation(async () => fail(404));
 
-    await expect(run()).rejects.toThrow(/404/);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await expect(run()).rejects.toBeInstanceOf(LlmUnavailableError);
+    // One attempt each, no retries — a missing model will not appear.
+    expect(modelsCalled(fetchMock)).toEqual([
+      "primary-model",
+      "fallback-model",
+      "last-resort-model",
+    ]);
   });
 });

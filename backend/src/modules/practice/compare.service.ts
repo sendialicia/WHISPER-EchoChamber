@@ -19,7 +19,7 @@ export async function generateComparison(req: CompareRequest): Promise<CompareRe
     prompt: buildSteelmanPrompt(req.topic, req.position),
     speed: "deep",
     expectJson: true,
-    maxTokens: 512,
+    maxTokens: 2048,
   });
 
   const json = result.json as { steelman?: string } | undefined;

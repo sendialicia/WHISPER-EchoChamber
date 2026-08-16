@@ -1,6 +1,10 @@
 import { env } from "@core/config/env";
 import { logger } from "@core/utils/logger";
-import { LlmUnavailableError, isRetryableStatus } from "../llmErrors";
+import {
+  LlmUnavailableError,
+  isDailyQuotaExhausted,
+  isRetryableStatus,
+} from "../llmErrors";
 import type { LlmGenerateOptions } from "../llmClient";
 
 interface ProviderResult {
@@ -19,10 +23,14 @@ type GeminiPart =
  * "fast" -> Flash-Lite (triage, tone check — high volume, low latency)
  * "deep" -> Flash/Pro (full analysis, steelmanning — needs stronger reasoning)
  *
- * Overload is retried, then the request is tried once against a second model.
+ * Overload is retried, then the request walks a chain of other models.
  * Gemini answers 503 whenever a model is briefly in heavy demand, and without
  * this a spike lasting seconds takes the whole feature down — the user just
  * sees the analysis fail with nothing to do about it.
+ *
+ * The chain matters more than the retries. A spike hits one model at a time,
+ * and the newest models are the most contended, so an older one is usually
+ * answering normally while the newest is refusing everyone.
  */
 export async function generateWithGemini(
   options: LlmGenerateOptions
@@ -31,21 +39,35 @@ export async function generateWithGemini(
     throw new Error("GEMINI_API_KEY is not set. Add it to your .env file.");
   }
 
-  const primary =
-    options.speed === "deep" ? env.GEMINI_DEEP_MODEL : env.GEMINI_FAST_MODEL;
-  const fallback =
-    options.speed === "deep" ? env.GEMINI_DEEP_FALLBACK_MODEL : env.GEMINI_FAST_FALLBACK_MODEL;
+  const chain = modelChain(options.speed);
+  let lastError: unknown;
 
-  try {
-    return await callWithRetries(primary, options);
-  } catch (err) {
-    if (!(err instanceof LlmUnavailableError) || fallback === primary) throw err;
-
-    // Demand spikes hit one model at a time, so a different one is usually
-    // answering fine — worth a single try before giving up on the request.
-    logger.warn(`${primary} unavailable, retrying once on ${fallback}`);
-    return callWithRetries(fallback, options, MAX_ATTEMPTS_FALLBACK);
+  for (const [index, model] of chain.entries()) {
+    const isPrimary = index === 0;
+    try {
+      if (!isPrimary) logger.warn(`Falling back to ${model}`);
+      // Only the primary is worth waiting on: once we know a spike is
+      // happening, moving to a quieter model beats retrying a busy one.
+      return await callWithRetries(model, options, isPrimary ? MAX_ATTEMPTS : 1);
+    } catch (err) {
+      // Anything other than overload is the request's own fault and will fail
+      // identically everywhere, so there is nothing to fall back to.
+      if (!(err instanceof LlmUnavailableError)) throw err;
+      lastError = err;
+    }
   }
+
+  throw lastError ?? new LlmUnavailableError(503);
+}
+
+/** The primary followed by its fallbacks, de-duplicated, in order. */
+function modelChain(speed: LlmGenerateOptions["speed"]): string[] {
+  const primary = speed === "deep" ? env.GEMINI_DEEP_MODEL : env.GEMINI_FAST_MODEL;
+  const fallbacks =
+    speed === "deep" ? env.GEMINI_DEEP_FALLBACK_MODELS : env.GEMINI_FAST_FALLBACK_MODELS;
+
+  const chain = [primary, ...fallbacks.split(",").map((m) => m.trim())];
+  return [...new Set(chain.filter(Boolean))];
 }
 
 /** Attempts against one model, backing off between transient failures. */
@@ -61,8 +83,24 @@ async function callWithRetries(
     if ("text" in result) return result;
 
     lastStatus = result.status;
+
+    // A model the key cannot reach is a configuration problem with that entry
+    // in the chain, not with the request — the next model may be fine, so it
+    // is skipped rather than allowed to end the whole attempt.
+    if (result.status === 404) {
+      logger.error(`${model} is not available to this API key — skipping it`);
+      throw new LlmUnavailableError(result.status, `Model ${model} is not available.`);
+    }
+
     if (!isRetryableStatus(result.status)) {
       throw new Error(`Gemini API error (${result.status}): ${result.body}`);
+    }
+
+    // Out of requests for the day on this model. Retrying cannot help, and
+    // the next model in the chain has its own daily budget.
+    if (result.status === 429 && isDailyQuotaExhausted(result.body)) {
+      logger.warn(`${model} is out of quota for today, moving on`);
+      throw new LlmUnavailableError(result.status);
     }
 
     if (attempt < maxAttempts) {
@@ -105,7 +143,10 @@ async function callGemini(
   const body = {
     contents,
     generationConfig: {
-      maxOutputTokens: options.maxTokens ?? 1024,
+      // Current Gemini models spend part of this budget on internal reasoning
+      // before writing anything, so a ceiling sized for the visible answer
+      // alone gets consumed before the answer starts.
+      maxOutputTokens: options.maxTokens ?? 2048,
       responseMimeType: options.expectJson ? "application/json" : "text/plain",
     },
   };
@@ -121,16 +162,28 @@ async function callGemini(
   }
 
   const data = (await res.json()) as any;
+  const candidate = data?.candidates?.[0];
   const text: string =
-    data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("\n") ?? "";
+    candidate?.content?.parts?.map((p: any) => p.text).join("\n") ?? "";
+
+  // Running out of budget mid-answer yields truncated JSON, which parses to
+  // nothing and surfaces as "analysis unavailable" with no clue why. Saying so
+  // here is the difference between a five-minute fix and an afternoon.
+  if (candidate?.finishReason === "MAX_TOKENS") {
+    logger.warn(
+      `${model} hit its token ceiling — the reply is truncated and will not parse. ` +
+        `Raise maxTokens for this call (used ${data?.usageMetadata?.totalTokenCount} total).`
+    );
+  }
 
   return { text, model };
 }
 
-/** Two retries on the same model is enough for a spike measured in seconds. */
-const MAX_ATTEMPTS = 3;
-/** The fallback gets one attempt — by then the user has waited long enough. */
-const MAX_ATTEMPTS_FALLBACK = 1;
+/**
+ * Attempts on the primary before moving down the chain. Kept low: waiting out
+ * a spike is slower and less likely to work than asking a quieter model.
+ */
+const MAX_ATTEMPTS = 2;
 const BASE_BACKOFF_MS = 600;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

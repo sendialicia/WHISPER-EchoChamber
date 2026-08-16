@@ -13,7 +13,7 @@ export async function runTriage(req: TriageRequest): Promise<TriageResult> {
     prompt: buildTriagePrompt(req.text),
     speed: "fast",
     expectJson: true,
-    maxTokens: 128,
+    maxTokens: 1024,
     ...(req.imageBase64
       ? { image: { base64: req.imageBase64, mimeType: req.imageMimeType } }
       : {}),

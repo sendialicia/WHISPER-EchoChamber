@@ -25,3 +25,17 @@ export class LlmUnavailableError extends Error {
 export function isRetryableStatus(status: number): boolean {
   return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
 }
+
+/**
+ * Whether a 429 means "you are out of requests for today" rather than "you
+ * are going too fast".
+ *
+ * Google returns 429 for both, and the difference decides what to do. A
+ * per-minute limit clears in seconds, so waiting works. A daily quota does
+ * not clear until tomorrow, so waiting only burns the user's time before
+ * failing anyway — and since the free tier counts per model, the right move
+ * is to go straight to the next model in the chain, which has its own budget.
+ */
+export function isDailyQuotaExhausted(body: string): boolean {
+  return /PerDay/i.test(body);
+}

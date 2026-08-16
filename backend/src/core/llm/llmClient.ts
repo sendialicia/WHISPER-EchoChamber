@@ -11,6 +11,7 @@
  * is still tuning prompts.
  */
 
+import { logger } from "@core/utils/logger";
 import { generateWithGemini } from "./providers/gemini.provider";
 
 export type LlmSpeed = "fast" | "deep";
@@ -65,6 +66,12 @@ function safeParseJson(text: string): unknown | undefined {
     const cleaned = text.replace(/```json|```/g, "").trim();
     return JSON.parse(cleaned);
   } catch {
+    // Callers fall back to a placeholder card when this returns nothing, so
+    // without a line here a malformed reply is indistinguishable from a model
+    // that genuinely had nothing to say.
+    logger.warn(
+      `Model reply was not valid JSON, falling back. First 200 chars: ${text.slice(0, 200)}`
+    );
     return undefined;
   }
 }
