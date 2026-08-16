@@ -56,7 +56,7 @@ export function PermissionsScreen({ navigation }: SettingsScreenProps<"Permissio
     setButtonShowing(shown);
     if (!shown) {
       setButtonError(
-        "Android wouldn't put the button on screen. Check that screen reading is on above, and that display over other apps is allowed."
+        "Android wouldn't put the button on screen. Both permissions above look granted, so this is a device quirk rather than a missing switch — the reason is in logcat under the GemaOverlay tag."
       );
     }
   }, []);

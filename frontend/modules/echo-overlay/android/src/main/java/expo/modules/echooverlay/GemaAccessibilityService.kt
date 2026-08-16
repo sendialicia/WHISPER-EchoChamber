@@ -3,6 +3,8 @@ package expo.modules.echooverlay
 import android.accessibilityservice.AccessibilityService
 import android.graphics.Bitmap
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -70,7 +72,18 @@ class GemaAccessibilityService : AccessibilityService() {
   /** One reading of the screen: text when it was exposed, an image if not. */
   data class PendingScan(val text: String?, val imageBase64: String?)
 
+  // Read from the JS thread, written on the main thread.
+  @Volatile
   private var overlay: OverlayButton? = null
+
+  /**
+   * Every window operation goes through here.
+   *
+   * WindowManager.addView must run on the main thread, and the module's
+   * AsyncFunction bodies do not — Expo runs those on a background thread, so
+   * calling straight through throws and the button silently never appears.
+   */
+  private val mainHandler = Handler(Looper.getMainLooper())
 
   private val screenshotExecutor = Executors.newSingleThreadExecutor()
 
@@ -94,14 +107,19 @@ class GemaAccessibilityService : AccessibilityService() {
 
   // ------------------------------------------------------------ the button
 
-  /** Returns false if the window system refused to show it. */
-  fun showButton(): Boolean {
-    val existing = overlay
-    if (existing != null && existing.isShowing) return true
+  /** Calls back with false if the window system refused to show it. */
+  fun showButton(onResult: (Boolean) -> Unit) {
+    mainHandler.post {
+      val existing = overlay
+      if (existing != null && existing.isShowing) {
+        onResult(true)
+        return@post
+      }
 
-    val button = OverlayButton(this) { handleButtonTap() }
-    overlay = button
-    return button.show()
+      val button = OverlayButton(this) { handleButtonTap() }
+      overlay = button
+      onResult(button.show())
+    }
   }
 
   /**
@@ -140,9 +158,12 @@ class GemaAccessibilityService : AccessibilityService() {
       .onFailure { e -> Log.w(TAG, "Couldn't bring GEMA forward", e) }
   }
 
-  fun hideButton() {
-    overlay?.hide()
-    overlay = null
+  fun hideButton(onDone: () -> Unit = {}) {
+    mainHandler.post {
+      overlay?.hide()
+      overlay = null
+      onDone()
+    }
   }
 
   val isButtonShowing: Boolean

@@ -40,12 +40,22 @@ class EchoOverlayModule : Module() {
     // ------------------------------------------------------------ the button
 
     /** False when the window system refused, e.g. no overlay grant at all. */
-    AsyncFunction("showButton") {
-      GemaAccessibilityService.instance?.showButton() ?: false
+    AsyncFunction("showButton") { promise: expo.modules.kotlin.Promise ->
+      val service = GemaAccessibilityService.instance
+      if (service == null) {
+        promise.resolve(false)
+        return@AsyncFunction
+      }
+      service.showButton { shown -> promise.resolve(shown) }
     }
 
-    AsyncFunction("hideButton") {
-      GemaAccessibilityService.instance?.hideButton()
+    AsyncFunction("hideButton") { promise: expo.modules.kotlin.Promise ->
+      val service = GemaAccessibilityService.instance
+      if (service == null) {
+        promise.resolve(null)
+        return@AsyncFunction
+      }
+      service.hideButton { promise.resolve(null) }
     }
 
     Function("isButtonShowing") {
