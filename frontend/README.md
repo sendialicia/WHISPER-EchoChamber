@@ -15,10 +15,10 @@ cp .env.example .env
 npm start
 ```
 
-The backend needs to be running too — see `../backend/README.md`. On an
-emulator no configuration is needed: the API client picks `10.0.2.2` on
-Android and `localhost` on iOS automatically. On a physical device, set
-`EXPO_PUBLIC_API_URL` to the host machine's LAN address.
+`.env` points at the deployed backend, so nothing needs to be running
+locally. To develop against a local server instead, comment out
+`EXPO_PUBLIC_API_URL` — the client then takes the address from the Expo dev
+server, which follows the machine across networks on its own.
 
 > Expo tooling wants Node >= 20.19.4. Older versions still run but print a
 > warning on every command.
@@ -71,6 +71,19 @@ Two pieces are load-bearing and easy to break:
 The glows behind each screen are the designer's own exported PNGs
 (`assets/backdrop/`) rather than CSS gradients — their falloff is hand-tuned
 and an approximation reads flatter.
+
+### Builds
+
+`development` — a dev client that loads JS from Metro. Needed while iterating
+on native code, and useless without a dev server running.
+
+`preview` — a standalone APK. It carries its own JS bundle and talks to the
+deployed backend, so it runs on someone else's phone with nothing of yours
+switched on. This is the one to share.
+
+```bash
+npx eas-cli build --profile preview --platform android
+```
 
 ### Launch and motion
 
