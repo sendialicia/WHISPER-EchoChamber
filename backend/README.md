@@ -86,9 +86,29 @@ Chamber Meter can never disagree about what has been scanned.
 > param**, so a client can never read someone else's data by changing a URL.
 > `POST /log/scan` works the same way.
 
+## Deploying
+
+Railway, with the **root directory set to `backend/`** — the repo holds the
+app alongside it, and Railway defaults to the repo root.
+
+`railway.json` covers the rest: build with `npm ci && npm run build`, start
+with `npm start`, and health-check `/health`.
+
+Set every variable listed in `.env.example` except `PORT`, which Railway
+injects itself.
+
+> `npm run build` runs `tsc-alias` after `tsc`. TypeScript emits the `@core/*`
+> style imports verbatim, so plain `node dist/server.js` cannot resolve them —
+> `tsconfig-paths` only maps them back to `src/`, which holds `.ts`. Dropping
+> that second step means the deploy builds cleanly and then crashes on boot.
+
+Once it is up, point the app at it with `EXPO_PUBLIC_API_URL` in
+`frontend/.env` and build the `preview` profile — that APK runs without a dev
+server, so it works on someone else's phone with nothing of yours running.
+
 ## Next steps (not yet implemented — TODOs in code)
 
 - Populate `CURATED_TOPIC_BANK` (practice/topic.service.ts), `EXERCISE_BANK` (practice/exercise.service.ts), and `CURATED_DIVERSE_READS` (dashboard/sourceDiversity.service.ts).
 - Replace the in-memory rate limiter with a real one before production.
 - Set `SUPABASE_URL` — `core/middleware/auth.middleware.ts` verifies Supabase JWTs against the project's JWKS, and every authed route returns 500 without it.
-- The `@core/*`, `@modules/*`, `@db/*` path aliases are configured in `tsconfig.json` and `vitest.config.ts` — `server.ts` uses `tsconfig-paths/register` to resolve them at runtime in dev/prod. If you switch to a bundler (esbuild/swc) later, you can drop that in favor of the bundler's native alias resolution.
+- The `@core/*`, `@modules/*`, `@db/*` path aliases are configured in `tsconfig.json` and `vitest.config.ts`. In dev `tsx` resolves them; for the compiled output `tsc-alias` rewrites them to relative paths at build time. If you switch to a bundler (esbuild/swc) later, you can drop `tsc-alias` in favour of the bundler's native alias resolution.
