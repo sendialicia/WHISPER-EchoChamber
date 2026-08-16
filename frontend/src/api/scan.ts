@@ -2,6 +2,7 @@ import { request } from "./client";
 import type {
   AnalyzeRequest,
   AnalyzeResult,
+  ScanLogEntry,
   ScanLogRequest,
   TriageRequest,
   TriageResult,
@@ -31,4 +32,9 @@ export function logScan(req: ScanLogRequest): Promise<{ status: string }> {
     body: req,
     auth: true,
   });
+}
+
+/** The caller's own recent scans, newest first. Requires a session. */
+export function getScanHistory(limit = 20, signal?: AbortSignal): Promise<ScanLogEntry[]> {
+  return request<ScanLogEntry[]>(`/log/scans?limit=${limit}`, { auth: true, signal });
 }

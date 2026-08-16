@@ -16,7 +16,6 @@ import {
   subscribeToPendingScan,
   takePendingScan,
 } from "../capture/pendingScan";
-import { recordScan } from "../storage/local";
 import type { AnalyzeResult, ScanContent } from "../api/types";
 import type { HomeScreenProps } from "../navigation/types";
 import { colors, spacing, typography } from "../theme";
@@ -61,7 +60,6 @@ export function ScanScreen({ navigation }: HomeScreenProps<"Scan">) {
     setPhase({ kind: "analyzing" });
     const result = await analyze(content);
 
-    await recordScan({ excerpt, mode: result.mode, tactic: result.tactic });
     await syncScanLog(content, excerpt, result);
 
     setPhase({ kind: "result", result });

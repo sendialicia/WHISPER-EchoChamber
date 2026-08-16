@@ -8,17 +8,18 @@ import { SectionHeading } from "../ui/Progress";
 import { Meter } from "../ui/Meter";
 import { TAB_BAR_CLEARANCE } from "../ui/TabBar";
 import { getEchoChamberMeter } from "../api/dashboard";
+import { getScanHistory } from "../api/scan";
 import { ApiError } from "../api/client";
 import { isAuthConfigured } from "../auth/identity";
-import { getName, getScanHistory, type ScanRecord } from "../storage/local";
-import type { EchoChamberMeterResult } from "../api/types";
+import { getName } from "../storage/local";
+import type { EchoChamberMeterResult, ScanLogEntry } from "../api/types";
 import type { HomeScreenProps } from "../navigation/types";
 import { colors, spacing, typography } from "../theme";
 
 /** Landing tab — where the user's own numbers live. */
 export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
   const [meter, setMeter] = useState<EchoChamberMeterResult | null>(null);
-  const [history, setHistory] = useState<ScanRecord[]>([]);
+  const [history, setHistory] = useState<ScanLogEntry[]>([]);
   const [name, setName] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,6 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setHistory(await getScanHistory());
     setName((await getName()) ?? "");
 
     if (!isAuthConfigured()) {
@@ -36,7 +36,14 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
     }
 
     try {
-      setMeter(await getEchoChamberMeter());
+      // Both come from scan_logs, so they can never disagree about what
+      // has been scanned.
+      const [meterResult, scans] = await Promise.all([
+        getEchoChamberMeter(),
+        getScanHistory(),
+      ]);
+      setMeter(meterResult);
+      setHistory(scans);
       setNotice(null);
     } catch (err) {
       setNotice(err instanceof ApiError ? err.message : "Couldn't load your meter.");
@@ -107,21 +114,20 @@ export function HomeScreen({ navigation }: HomeScreenProps<"HomeMain">) {
           {history.length === 0 ? (
             <Card>
               <Text style={styles.empty}>
-                Nothing scanned yet. Anything you check will be listed here, on
-                this device only.
+                Nothing scanned yet. Anything you check will be listed here.
               </Text>
             </Card>
           ) : (
             shown.map((scan) => (
               <Card key={scan.id}>
                 <Text style={styles.scanExcerpt} numberOfLines={2}>
-                  {scan.excerpt}
+                  {scan.sourceText}
                 </Text>
                 <Text style={styles.scanMeta}>
                   {scan.mode === "fact_context" ? "Fact context" : "Two sides"}
                   {scan.tactic ? ` · ${scan.tactic.replace(/_/g, " ")}` : ""}
                   {" · "}
-                  {new Date(scan.scannedAt).toLocaleDateString()}
+                  {new Date(scan.createdAt).toLocaleDateString()}
                 </Text>
               </Card>
             ))

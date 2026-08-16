@@ -7,10 +7,11 @@ import { Card, InfoCard } from "../ui/Card";
 import { SegmentedControl } from "../ui/Button";
 import { ShareBar } from "../ui/Progress";
 import { getEchoChamberMeter } from "../api/dashboard";
+import { getScanHistory } from "../api/scan";
 import { ApiError } from "../api/client";
 import { isAuthConfigured } from "../auth/identity";
-import { getScanHistory, type ScanRecord } from "../storage/local";
-import type { EchoChamberMeterResult } from "../api/types";
+
+import type { EchoChamberMeterResult, ScanLogEntry } from "../api/types";
 import { colors, radius, spacing, typography } from "../theme";
 
 const TABS = ["Breakdown", "History"] as const;
@@ -20,13 +21,12 @@ type Tab = (typeof TABS)[number];
 export function AnalysisScreen() {
   const [tab, setTab] = useState<Tab>("Breakdown");
   const [meter, setMeter] = useState<EchoChamberMeterResult | null>(null);
-  const [history, setHistory] = useState<ScanRecord[]>([]);
+  const [history, setHistory] = useState<ScanLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setHistory(await getScanHistory());
 
     if (!isAuthConfigured()) {
       setNotice("Connect Supabase to see your breakdown.");
@@ -35,7 +35,12 @@ export function AnalysisScreen() {
     }
 
     try {
-      setMeter(await getEchoChamberMeter());
+      const [meterResult, scans] = await Promise.all([
+        getEchoChamberMeter(),
+        getScanHistory(),
+      ]);
+      setMeter(meterResult);
+      setHistory(scans);
       setNotice(null);
     } catch (err) {
       setNotice(err instanceof ApiError ? err.message : "Couldn't load your breakdown.");
@@ -118,12 +123,12 @@ function BreakdownTab({
   );
 }
 
-function HistoryTab({ history }: { history: ScanRecord[] }) {
+function HistoryTab({ history }: { history: ScanLogEntry[] }) {
   if (history.length === 0) {
     return (
       <Card>
         <Text style={styles.empty}>
-          Nothing scanned yet. Your history stays on this device.
+          Nothing scanned yet. Anything you check will appear here.
         </Text>
       </Card>
     );
@@ -142,7 +147,7 @@ function HistoryTab({ history }: { history: ScanRecord[] }) {
           {records.map((record) => (
             <Card key={record.id}>
               <Text style={styles.excerpt} numberOfLines={3}>
-                {record.excerpt}
+                {record.sourceText}
               </Text>
               <Text style={styles.meta}>
                 {record.mode === "fact_context" ? "Fact context" : "Two sides"}
@@ -157,14 +162,14 @@ function HistoryTab({ history }: { history: ScanRecord[] }) {
 }
 
 /** "Today" / "Yesterday" / a date, in the order the mockup's timeline shows. */
-function groupByDay(records: ScanRecord[]): [string, ScanRecord[]][] {
+function groupByDay(records: ScanLogEntry[]): [string, ScanLogEntry[]][] {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const buckets = new Map<string, ScanRecord[]>();
+  const buckets = new Map<string, ScanLogEntry[]>();
 
   for (const record of records) {
-    const when = new Date(record.scannedAt);
+    const when = new Date(record.createdAt);
     const daysAgo = Math.floor((startOfToday.getTime() - when.getTime()) / 86_400_000) + 1;
 
     const label =

@@ -46,13 +46,17 @@ thing that should touch these tables.
 
 The practice streak, bookmarks, and display name never reach the server —
 they live in the app's own storage, which is what the app promises the user.
+Nothing else is kept on the device: scan history is read back from
+`scan_logs` rather than mirrored locally, so the history lists and the Echo
+Chamber Meter can never disagree about what has been scanned.
 
 ## Endpoints
 
 **Feature 1 — Scan**
 - `POST /scan/triage` — `{ text?, imageBase64?, imageMimeType? }` → `{ is_controversial, confidence }`
 - `POST /scan/analyze` — `{ text?, imageBase64?, imageMimeType?, sourceUrl? }` → full analysis card
-- `POST /log/scan` — persist a scan result (opt-in, on-device first)
+- `POST /log/scan` — persist a scan result (opt-in)
+- `GET /log/scans?limit=20` — the caller's own recent scans, newest first
 
 > `text` OR `imageBase64` is required (one of them) — a body with neither, or
 > with only whitespace text, gets a `400 invalid_request`. When `imageBase64`

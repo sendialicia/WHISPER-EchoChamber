@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { randomUUID } from "crypto";
-import { saveScanLog } from "./scanLog.service";
+import { getRecentScanLogs, saveScanLog } from "./scanLog.service";
 
 // userId is intentionally NOT in this schema — it comes from the verified
 // token (req.userId), never trusted from the request body.
@@ -28,4 +28,24 @@ export async function scanLogController(req: Request, res: Response) {
   });
 
   res.status(201).json({ status: "logged" });
+}
+
+/** How many scans a history list shows before "View All" is needed. */
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+
+const listSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
+});
+
+export async function scanHistoryController(req: Request, res: Response) {
+  const parsed = listSchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_request", details: parsed.error.flatten() });
+  }
+
+  // userId comes from the verified token, so this can only ever return the
+  // caller's own history.
+  const scans = await getRecentScanLogs(req.userId!, parsed.data.limit);
+  res.json(scans);
 }

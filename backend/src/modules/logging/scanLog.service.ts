@@ -64,3 +64,23 @@ export async function getScanLogsForUser(userId: string): Promise<ScanLogEntry[]
 
   return result.rows.map(rowToEntry);
 }
+
+/**
+ * The most recent scans, for the history lists.
+ *
+ * Separate from [getScanLogsForUser] because the dashboard aggregates need
+ * every row to be accurate, while a list on screen only ever shows the last
+ * handful — and a user with hundreds of scans should not have all of them
+ * crossing the wire to render three cards.
+ */
+export async function getRecentScanLogs(
+  userId: string,
+  limit: number
+): Promise<ScanLogEntry[]> {
+  const result = await pgPool.query<ScanLogRow>(
+    `SELECT * FROM scan_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2`,
+    [userId, limit]
+  );
+
+  return result.rows.map(rowToEntry);
+}

@@ -78,6 +78,19 @@ export interface AnalyzeResult {
   side_shown: "a" | "b" | null;
 }
 
+/** A logged scan, as the history lists render it. */
+export interface ScanLogEntry {
+  id: string;
+  userId: string;
+  createdAt: string;
+  sourceText: string;
+  sourceUrl?: string;
+  mode: ContentMode;
+  tactic: string | null;
+  topic?: string;
+  sideShown?: "a" | "b";
+}
+
 export interface ScanLogRequest {
   sourceText: string;
   sourceUrl?: string;

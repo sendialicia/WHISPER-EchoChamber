@@ -1,14 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { AnalyzeResult } from "../api/types";
 
 /**
- * On-device state for the parts of the design the backend doesn't cover:
- * the practice streak, bookmarked readings, and recent scans.
+ * On-device state for the parts the backend deliberately has no table for:
+ * the practice streak, bookmarked readings, and the display name.
+ *
+ * Scan history is NOT here. It used to be, from before scan_logs moved to
+ * Postgres, and keeping both meant Home could list a scan the Echo Chamber
+ * Meter had never counted — the upload is non-fatal by design, so one failure
+ * was enough to make the two disagree with no way to tell.
  *
  * AsyncStorage rather than SecureStore on purpose — none of this is a
- * credential, and SecureStore's ~2KB ceiling would fight the history list.
- * It also matches what the app promises the user: practice and scan history
- * stay on the device.
+ * credential. It also matches what the app promises the user: practice stays
+ * on the device.
  */
 
 // Prefix predates the rename to GEMA. Left alone deliberately: changing it
@@ -16,14 +19,11 @@ import type { AnalyzeResult } from "../api/types";
 const KEYS = {
   streak: "echobreaker.streak",
   bookmarks: "echobreaker.bookmarks",
-  scans: "echobreaker.scans",
   name: "echobreaker.name",
 } as const;
 
 /** Longer than this and the greeting stops fitting on one line. */
 export const MAX_NAME_LENGTH = 24;
-
-const MAX_SCANS = 50;
 
 async function readJson<T>(key: string, fallback: T): Promise<T> {
   try {
@@ -139,38 +139,6 @@ export async function toggleBookmark(entry: Omit<Bookmark, "savedAt">): Promise<
   return next;
 }
 
-// ------------------------------------------------------------ scan history
-
-export interface ScanRecord {
-  id: string;
-  /** What was scanned, trimmed for the list. */
-  excerpt: string;
-  mode: AnalyzeResult["mode"];
-  tactic: string | null;
-  scannedAt: string;
-}
-
-export async function getScanHistory(): Promise<ScanRecord[]> {
-  return readJson<ScanRecord[]>(KEYS.scans, []);
-}
-
-export async function recordScan(
-  entry: Omit<ScanRecord, "id" | "scannedAt">
-): Promise<ScanRecord[]> {
-  const current = await getScanHistory();
-  const next = [
-    {
-      ...entry,
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      scannedAt: new Date().toISOString(),
-    },
-    ...current,
-  ].slice(0, MAX_SCANS);
-
-  await writeJson(KEYS.scans, next);
-  return next;
-}
-
 export async function clearLocalData(): Promise<void> {
-  await AsyncStorage.multiRemove([KEYS.streak, KEYS.bookmarks, KEYS.scans]);
+  await AsyncStorage.multiRemove([KEYS.streak, KEYS.bookmarks]);
 }
