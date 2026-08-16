@@ -5,9 +5,12 @@
 // to hold a port open. `src/server.ts` keeps the `app.listen` path for running
 // this locally.
 //
+// The source files it comes from are named away from Vercel's own detection
+// paths, so this stays the only candidate it can pick.
+//
 // It also loads the compiled `dist/` rather than `src/`, because only
 // `npm run build` (via `tsc-alias`) turns the `@core/*` aliases into imports
 // plain Node can resolve.
-const { createApp } = require("./dist/app.js");
+const { createApp } = require("./dist/createApp.js");
 
 module.exports = createApp();
