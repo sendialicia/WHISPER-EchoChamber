@@ -1,9 +1,13 @@
-// Production entrypoint.
+// Production entrypoint for the serverless host.
 //
-// Vercel looks for an Express app at a handful of well-known paths and this is
-// one of them. It deliberately points at the compiled output rather than
-// src/server.ts: the source uses `@core/*` style path aliases, and only
-// `tsc-alias` — which runs as part of `npm run build` — rewrites those into
-// relative imports that plain Node can resolve. Letting the platform compile
-// the TypeScript itself would put that resolution back in question.
-require("./dist/server.js");
+// It exports the Express app rather than starting a listener: the platform
+// invokes an exported handler per request, and there is no long-lived process
+// to hold a port open. `src/server.ts` keeps the `app.listen` path for running
+// this locally.
+//
+// It also loads the compiled `dist/` rather than `src/`, because only
+// `npm run build` (via `tsc-alias`) turns the `@core/*` aliases into imports
+// plain Node can resolve.
+const { createApp } = require("./dist/app.js");
+
+module.exports = createApp();
